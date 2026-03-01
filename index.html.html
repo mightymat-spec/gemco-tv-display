@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemco Venue — Bookings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #151518;
+    --surface2: #1c1c21;
+    --border: rgba(255,255,255,0.07);
+    --gold: #c9a84c;
+    --gold-dim: #7a6230;
+    --text: #e8e4dc;
+    --text-muted: #6b6760;
+    --text-dim: #9e9891;
+    --red: #c94c4c;
+    --green: #4caa6e;
+    --blue: #4c7ec9;
+    --purple: #7e4cc9;
+    --teal: #4cb8c9;
+    --orange: #c97a4c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100vh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Subtle grain texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 1000;
+  }
+
+  /* ── LAYOUT ── */
+  .wrapper {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    padding: 28px 36px 24px;
+    gap: 24px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px;
+  }
+
+  .logo-block .venue-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .logo-block .venue-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 6px;
+  }
+
+  .clock-block {
+    text-align: right;
+  }
+
+  .clock-block .time {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .clock-block .date {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 24px;
+    min-height: 0;
+  }
+
+  /* ── CALENDAR PANEL ── */
+  .calendar-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .month-label {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: 0.04em;
+  }
+
+  .nav-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .cal-grid {
+    flex: 1;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+  }
+
+  .day-headers {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+  }
+
+  .day-hdr {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .day-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    cursor: default;
+    transition: border-color 0.15s;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .day-cell.other-month {
+    background: transparent;
+    border-color: transparent;
+    opacity: 0.3;
+  }
+
+  .day-cell.today {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.07);
+  }
+
+  .day-cell.has-bookings {
+    border-color: rgba(255,255,255,0.13);
+  }
+
+  .day-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1;
+  }
+
+  .day-cell.today .day-num {
+    color: var(--gold);
+    font-weight: 400;
+  }
+
+  .day-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-top: 2px;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .booking-chip {
+    font-size: 0.55rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 1px 4px;
+    border-radius: 3px;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  /* ── LIST PANEL ── */
+  .list-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .list-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    font-weight: 400;
+    color: var(--text);
+  }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    border: 1px solid var(--gold-dim);
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  .booking-list {
+    flex: 1;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+
+  .booking-list::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+  }
+
+  .booking-item {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border-left: 3px solid transparent;
+    flex-shrink: 0;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .booking-item.is-now {
+    background: rgba(201,168,76,0.06);
+    border-color: rgba(201,168,76,0.25);
+    border-left-color: var(--gold);
+  }
+
+  .booking-item.is-past {
+    opacity: 0.4;
+  }
+
+  .b-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .b-date strong {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .b-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .b-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .b-space {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .space-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .now-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(201,168,76,0.15);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    display: none;
+  }
+
+  /* ── LOADING / EMPTY ── */
+  .empty-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 20px;
+    letter-spacing: 0.1em;
+  }
+
+  .last-updated {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* Scrolling list animation */
+  .booking-list-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.6s ease;
+  }
+
+  /* ── DIVIDERS ── */
+  .date-divider {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    padding: 6px 0 2px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║          GEMCO TV BOOKING DISPLAY — CONFIGURATION        ║
+  ╠══════════════════════════════════════════════════════════╣
+  ║  1. Find your Skedda iCal URLs:                          ║
+  ║     Skedda Admin → Spaces → each space → "Subscribe"    ║
+  ║     Copy the .ics URL for each space                     ║
+  ║                                                          ║
+  ║  2. Paste them into SPACES below (replace the examples)  ║
+  ║                                                          ║
+  ║  3. Host this file anywhere (Google Drive, Dropbox,      ║
+  ║     GitHub Pages, or a cheap web host) and open it       ║
+  ║     in a browser on your TV in fullscreen mode (F11)     ║
+  ╚══════════════════════════════════════════════════════════╝
+-->
+
+<div class="wrapper">
+  <header>
+    <div class="logo-block">
+      <div class="venue-name">Gemco</div>
+      <div class="venue-sub">Venue Bookings</div>
+    </div>
+    <div class="clock-block">
+      <div class="time" id="clock">--:--</div>
+      <div class="date" id="dateStr"></div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="calendar-panel">
+      <div class="month-nav">
+        <button class="nav-btn" id="prevMonth">‹</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button class="nav-btn" id="nextMonth">›</button>
+      </div>
+      <div class="cal-grid">
+        <div class="day-headers">
+          <div class="day-hdr">Sun</div>
+          <div class="day-hdr">Mon</div>
+          <div class="day-hdr">Tue</div>
+          <div class="day-hdr">Wed</div>
+          <div class="day-hdr">Thu</div>
+          <div class="day-hdr">Fri</div>
+          <div class="day-hdr">Sat</div>
+        </div>
+        <div class="days-grid" id="daysGrid"></div>
+      </div>
+    </div>
+
+    <div class="list-panel">
+      <div class="list-header">
+        <div class="list-title">Upcoming Bookings</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="last-updated" id="lastUpdated"></div>
+          <div class="badge" id="countBadge">— events</div>
+        </div>
+      </div>
+      <div class="booking-list" id="bookingList">
+        <div class="booking-list-inner" id="bookingListInner">
+          <div class="empty-msg">Loading bookings…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIGURATION — Edit this section with your Skedda URLs
+// ══════════════════════════════════════════════════════════
+const SPACES = [
+  {
+    name: "Main Hall",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_1_TOKEN.ics",
+    color: "#c9a84c"   // gold
+  },
+  {
+    name: "Studio",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_2_TOKEN.ics",
+    color: "#4c7ec9"   // blue
+  },
+  {
+    name: "Meeting Room",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_3_TOKEN.ics",
+    color: "#4caa6e"   // green
+  },
+  {
+    name: "Rehearsal Room",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_4_TOKEN.ics",
+    color: "#c94c4c"   // red
+  },
+  {
+    name: "Green Room",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_5_TOKEN.ics",
+    color: "#4cb8c9"   // teal
+  },
+  {
+    name: "Foyer",
+    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_6_TOKEN.ics",
+    color: "#c97a4c"   // orange
+  }
+];
+
+// Refresh interval (milliseconds) — 10 minutes default
+const REFRESH_INTERVAL = 10 * 60 * 1000;
+
+// CORS proxy to bypass browser restrictions when fetching iCal URLs
+// allorigins.win is a free service — alternatively set up your own
+const CORS_PROXY = "https://api.allorigins.win/get?url=";
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let allBookings = [];
+let viewMonth   = new Date();
+viewMonth.setDate(1);
+
+// ══════════════════════════════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+  document.getElementById('dateStr').textContent =
+    now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ══════════════════════════════════════════════════════════
+//  iCAL PARSER  (minimal — handles standard Skedda output)
+// ══════════════════════════════════════════════════════════
+function parseIcal(text) {
+  const events = [];
+  const blocks = text.split('BEGIN:VEVENT');
+  blocks.shift(); // discard header
+
+  for (const block of blocks) {
+    const get = (key) => {
+      // Handle folded lines (RFC5545 line folding)
+      const unfolded = block.replace(/\r?\n[ \t]/g, '');
+      const m = unfolded.match(new RegExp(`${key}(?:;[^:]+)?:(.+?)(?:\\r?\\n|$)`));
+      return m ? m[1].trim() : '';
+    };
+
+    const parseDt = (raw) => {
+      if (!raw) return null;
+      // Format: 20240615T090000Z or 20240615
+      const clean = raw.replace('Z','');
+      if (clean.includes('T')) {
+        const y = clean.slice(0,4), mo = clean.slice(4,6), d = clean.slice(6,8);
+        const h = clean.slice(9,11), mi = clean.slice(11,13), s = clean.slice(13,15)||'00';
+        // Check if it has Z (UTC) or is local
+        const isUtc = raw.endsWith('Z');
+        if (isUtc) return new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
+        return new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}`);
+      } else {
+        // All-day: YYYYMMDD
+        const y = clean.slice(0,4), mo = clean.slice(4,6), d = clean.slice(6,8);
+        return new Date(`${y}-${mo}-${d}T00:00:00`);
+      }
+    };
+
+    const dtstart = parseDt(get('DTSTART'));
+    const dtend   = parseDt(get('DTEND'));
+    const summary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';') || 'Booking';
+    const desc    = get('DESCRIPTION').replace(/\\,/g,',').replace(/\\n/g,' ') || '';
+    const loc     = get('LOCATION') || '';
+
+    if (dtstart) {
+      events.push({ start: dtstart, end: dtend, title: summary, desc, location: loc });
+    }
+  }
+  return events;
+}
+
+// ══════════════════════════════════════════════════════════
+//  FETCH ALL SPACES
+// ══════════════════════════════════════════════════════════
+async function fetchAllSpaces() {
+  allBookings = [];
+
+  // If all URLs are placeholders, use demo data
+  const allPlaceholder = SPACES.every(s => s.icalUrl.includes('YOUR_SPACE'));
+  if (allPlaceholder) {
+    loadDemoData();
+    return;
+  }
+
+  const promises = SPACES.map(async (space) => {
+    if (space.icalUrl.includes('YOUR_SPACE')) return; // skip unconfigured
+    try {
+      const proxyUrl = CORS_PROXY + encodeURIComponent(space.icalUrl);
+      const resp = await fetch(proxyUrl);
+      const json = await resp.json();
+      const events = parseIcal(json.contents);
+      events.forEach(ev => {
+        allBookings.push({ ...ev, space: space.name, color: space.color });
+      });
+    } catch(e) {
+      console.warn(`Failed to fetch ${space.name}:`, e);
+    }
+  });
+
+  await Promise.all(promises);
+
+  // Sort by start time
+  allBookings.sort((a,b) => a.start - b.start);
+
+  document.getElementById('lastUpdated').textContent =
+    'Updated ' + new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
+
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DEMO DATA (shown until real URLs are configured)
+// ══════════════════════════════════════════════════════════
+function loadDemoData() {
+  const now = new Date();
+  const base = (daysOffset, h, m) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + daysOffset);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const demo = [
+    { title: "Drama Rehearsal",     start: base(0,9,0),  end: base(0,12,0), space: "Main Hall",      color: "#c9a84c" },
+    { title: "Board Meeting",       start: base(0,14,0), end: base(0,16,0), space: "Meeting Room",   color: "#4caa6e" },
+    { title: "Youth Theatre",       start: base(1,10,0), end: base(1,13,0), space: "Studio",         color: "#4c7ec9" },
+    { title: "Set Construction",    start: base(1,13,0), end: base(1,17,0), space: "Main Hall",      color: "#c9a84c" },
+    { title: "Costume Workshop",    start: base(2,9,30), end: base(2,12,0), space: "Green Room",     color: "#4cb8c9" },
+    { title: "Full Run-Through",    start: base(3,18,0), end: base(3,22,0), space: "Main Hall",      color: "#c9a84c" },
+    { title: "Tech Rehearsal",      start: base(4,17,0), end: base(4,21,0), space: "Main Hall",      color: "#c9a84c" },
+    { title: "Script Reading",      start: base(5,10,0), end: base(5,12,0), space: "Rehearsal Room", color: "#c94c4c" },
+    { title: "Auditions",           start: base(6,9,0),  end: base(6,17,0), space: "Main Hall",      color: "#c9a84c" },
+    { title: "Committee Meeting",   start: base(7,19,0), end: base(7,21,0), space: "Meeting Room",   color: "#4caa6e" },
+    { title: "Dance Rehearsal",     start: base(9,10,0), end: base(9,13,0), space: "Studio",         color: "#4c7ec9" },
+    { title: "Production Meeting",  start: base(10,18,0),end: base(10,20,0),space: "Foyer",          color: "#c97a4c" },
+    { title: "Opening Night",       start: base(14,19,0),end: base(14,23,0),space: "Main Hall",      color: "#c9a84c" },
+    { title: "Matinee Performance", start: base(15,14,0),end: base(15,17,0),space: "Main Hall",      color: "#c9a84c" },
+    { title: "Evening Performance", start: base(15,19,0),end: base(15,22,0),space: "Main Hall",      color: "#c9a84c" },
+  ];
+
+  // Add a few more spread across the month
+  for (let i = 17; i < 30; i += 3) {
+    demo.push({
+      title: ["Rehearsal", "Workshop", "Meeting", "Reading"][i%4],
+      start: base(i, 10 + (i%4), 0), end: base(i, 13 + (i%4), 0),
+      space: SPACES[i % SPACES.length].name,
+      color: SPACES[i % SPACES.length].color
+    });
+  }
+
+  allBookings = demo.sort((a,b) => a.start - b.start);
+  document.getElementById('lastUpdated').textContent = 'Demo mode — configure URLs above';
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER CALENDAR
+// ══════════════════════════════════════════════════════════
+function renderCalendar() {
+  const year  = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+
+  document.getElementById('monthLabel').textContent =
+    viewMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Build a set of day keys that have bookings
+  const bookedDays = {};
+  for (const bk of allBookings) {
+    const d = new Date(bk.start);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const key = d.getDate();
+      if (!bookedDays[key]) bookedDays[key] = [];
+      bookedDays[key].push(bk);
+    }
+  }
+
+  const grid = document.getElementById('daysGrid');
+  grid.innerHTML = '';
+
+  // Prev month padding
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell other-month';
+    cell.innerHTML = `<div class="day-num">${daysInPrev - i}</div>`;
+    grid.appendChild(cell);
+  }
+
+  // This month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cellDate = new Date(year, month, d);
+    const cell = document.createElement('div');
+    const isToday = cellDate.getTime() === today.getTime();
+    const bks = bookedDays[d] || [];
+
+    cell.className = 'day-cell' + (isToday ? ' today' : '') + (bks.length ? ' has-bookings' : '');
+    cell.dataset.date = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+    let inner = `<div class="day-num">${d}</div>`;
+
+    if (bks.length) {
+      inner += '<div class="day-dots">';
+      // Show dots for unique spaces
+      const seenSpaces = new Set();
+      bks.forEach(bk => {
+        if (!seenSpaces.has(bk.space)) {
+          seenSpaces.add(bk.space);
+          inner += `<div class="dot" style="background:${bk.color}" title="${bk.space}"></div>`;
+        }
+      });
+      inner += '</div>';
+
+      // Show first booking chip if space allows
+      inner += `<div class="booking-chip" style="background:${bks[0].color}22;color:${bks[0].color}">${bks[0].title}</div>`;
+      if (bks.length > 1) {
+        inner += `<div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+${bks.length - 1} more</div>`;
+      }
+    }
+
+    cell.innerHTML = inner;
+
+    // Click to jump list to this date
+    cell.addEventListener('click', () => scrollListToDate(cell.dataset.date));
+    grid.appendChild(cell);
+  }
+
+  // Next month padding
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  let nextDay = 1;
+  for (let i = firstDay + daysInMonth; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell other-month';
+    cell.innerHTML = `<div class="day-num">${nextDay++}</div>`;
+    grid.appendChild(cell);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER LIST
+// ══════════════════════════════════════════════════════════
+function renderList() {
+  const listEl = document.getElementById('bookingListInner');
+  const now    = new Date();
+
+  // Show from start of today onward
+  const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+  const upcoming = allBookings.filter(bk => bk.end > startOfToday);
+  const past     = allBookings.filter(bk => bk.end <= startOfToday);
+
+  document.getElementById('countBadge').textContent =
+    upcoming.length + (upcoming.length === 1 ? ' event' : ' events');
+
+  if (!upcoming.length && !past.length) {
+    listEl.innerHTML = '<div class="empty-msg">No bookings found</div>';
+    return;
+  }
+
+  let html = '';
+  let lastDateStr = '';
+
+  const fmtDate = (d) => d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
+  const fmtTime = (d) => d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
+
+  const renderBk = (bk) => {
+    const isNow  = bk.start <= now && bk.end > now;
+    const isPast = bk.end   <= now;
+    const dateStr = fmtDate(bk.start);
+
+    let divider = '';
+    if (dateStr !== lastDateStr) {
+      lastDateStr = dateStr;
+      const isToday = fmtDate(now) === dateStr;
+      divider = `<div class="date-divider">${isToday ? '▸ Today — ' : ''}${dateStr}</div>`;
+    }
+
+    const cls = isNow ? 'booking-item is-now' : isPast ? 'booking-item is-past' : 'booking-item';
+
+    return divider + `
+      <div class="${cls}" style="border-left-color:${bk.color}" data-date="${bk.start.toISOString().slice(0,10)}">
+        <div class="b-date">
+          <strong>${fmtTime(bk.start)}</strong>
+          ${fmtTime(bk.end)}
+        </div>
+        <div>
+          <div class="b-title">${bk.title}</div>
+          ${bk.desc ? `<div class="b-sub">${bk.desc.slice(0,60)}</div>` : ''}
+        </div>
+        <div class="b-space">
+          <span class="space-tag" style="background:${bk.color}22;color:${bk.color}">${bk.space}</span>
+          ${isNow ? '<span class="now-pill">Now</span>' : ''}
+        </div>
+      </div>`;
+  };
+
+  html += upcoming.map(renderBk).join('');
+  listEl.innerHTML = html;
+
+  // Auto-scroll: nudge past current event
+  autoScroll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUTO-SCROLL (cycles through list slowly)
+// ══════════════════════════════════════════════════════════
+let scrollTimer = null;
+let scrollPos   = 0;
+
+function autoScroll() {
+  clearInterval(scrollTimer);
+  const listEl  = document.getElementById('bookingList');
+  const innerEl = document.getElementById('bookingListInner');
+  scrollPos = 0;
+
+  // Scroll to "now" first
+  const nowItem = innerEl.querySelector('.is-now');
+  if (nowItem) {
+    scrollPos = Math.max(0, nowItem.offsetTop - 20);
+    listEl.scrollTop = scrollPos;
+  }
+
+  const maxScroll = innerEl.scrollHeight - listEl.clientHeight;
+
+  // Slow cycle scroll every 5s
+  scrollTimer = setInterval(() => {
+    if (maxScroll <= 0) return;
+    scrollPos += 90;
+    if (scrollPos >= maxScroll) scrollPos = 0;
+    listEl.scrollTo({ top: scrollPos, behavior: 'smooth' });
+  }, 5000);
+}
+
+function scrollListToDate(dateStr) {
+  const listEl  = document.getElementById('bookingList');
+  const item    = document.querySelector(`[data-date="${dateStr}"]`);
+  if (item) {
+    clearInterval(scrollTimer);
+    listEl.scrollTo({ top: item.offsetTop - 20, behavior: 'smooth' });
+    // Resume auto-scroll after 30s
+    setTimeout(autoScroll, 30000);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  COMBINED RENDER
+// ══════════════════════════════════════════════════════════
+function renderAll() {
+  renderCalendar();
+  renderList();
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION BUTTONS
+// ══════════════════════════════════════════════════════════
+document.getElementById('prevMonth').addEventListener('click', () => {
+  viewMonth.setMonth(viewMonth.getMonth() - 1);
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  viewMonth.setMonth(viewMonth.getMonth() + 1);
+  renderCalendar();
+});
+
+// ══════════════════════════════════════════════════════════
+//  INIT & AUTO-REFRESH
+// ══════════════════════════════════════════════════════════
+fetchAllSpaces();
+setInterval(fetchAllSpaces, REFRESH_INTERVAL);
+
+// Re-render list every minute (to update "Now" status)
+setInterval(() => {
+  renderList();
+}, 60 * 1000);
+
+// Fullscreen hint on click (useful for TV setup)
+document.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
