@@ -493,33 +493,33 @@
 // ══════════════════════════════════════════════════════════
 const SPACES = [
   {
-    name: "Main Hall",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_1_TOKEN.ics",
+    name: "Theatre",
+    icalUrl: "https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644",
     color: "#c9a84c"   // gold
   },
   {
-    name: "Studio",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_2_TOKEN.ics",
-    color: "#4c7ec9"   // blue
-  },
-  {
-    name: "Meeting Room",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_3_TOKEN.ics",
-    color: "#4caa6e"   // green
-  },
-  {
-    name: "Rehearsal Room",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_4_TOKEN.ics",
+    name: "Bar & Foyer",
+    icalUrl: "https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645",
     color: "#c94c4c"   // red
   },
   {
-    name: "Green Room",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_5_TOKEN.ics",
+    name: "Kitchen",
+    icalUrl: "https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646",
+    color: "#4caa6e"   // green
+  },
+  {
+    name: "Hall",
+    icalUrl: "https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647",
+    color: "#4c7ec9"   // blue
+  },
+  {
+    name: "Carriage",
+    icalUrl: "https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648",
     color: "#4cb8c9"   // teal
   },
   {
-    name: "Foyer",
-    icalUrl: "https://gemco.skedda.com/booking/ical/YOUR_SPACE_6_TOKEN.ics",
+    name: "Car Park",
+    icalUrl: "https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649",
     color: "#c97a4c"   // orange
   }
 ];
@@ -529,7 +529,7 @@ const REFRESH_INTERVAL = 10 * 60 * 1000;
 
 // CORS proxy to bypass browser restrictions when fetching iCal URLs
 // allorigins.win is a free service — alternatively set up your own
-const CORS_PROXY = "https://api.allorigins.win/get?url=";
+const CORS_PROXY = "https://corsproxy.io/?";
 
 // ══════════════════════════════════════════════════════════
 //  STATE
@@ -616,8 +616,8 @@ async function fetchAllSpaces() {
     try {
       const proxyUrl = CORS_PROXY + encodeURIComponent(space.icalUrl);
       const resp = await fetch(proxyUrl);
-      const json = await resp.json();
-      const events = parseIcal(json.contents);
+      const text = await resp.text();
+      const events = parseIcal(text);
       events.forEach(ev => {
         allBookings.push({ ...ev, space: space.name, color: space.color });
       });
