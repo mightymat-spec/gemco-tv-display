@@ -587,7 +587,9 @@ function parseIcal(text) {
 
     const dtstart = parseDt(get('DTSTART'));
     const dtend   = parseDt(get('DTEND'));
-    const summary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';') || 'Booking';
+    const rawSummary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';') || 'Booking';
+    // Strip any cost/price info (e.g. "$120.00", "- $50", "Cost: $80", "(AUD 200)")
+    const summary = rawSummary.replace(/[-–]?\s*(cost|hire|fee|price|aud|total)?:?\s*\$[\d,]+(\.\d{1,2})?/gi, '').replace(/\(AUD\s*[\d,]+(\.\d{1,2})?\)/gi, '').trim();
     const desc    = get('DESCRIPTION').replace(/\\,/g,',').replace(/\\n/g,' ') || '';
     const loc     = get('LOCATION') || '';
 
@@ -818,7 +820,6 @@ function renderList() {
         </div>
         <div>
           <div class="b-title">${bk.title}</div>
-          ${bk.desc ? `<div class="b-sub">${bk.desc.slice(0,60)}</div>` : ''}
         </div>
         <div class="b-space">
           <span class="space-tag" style="background:${bk.color}22;color:${bk.color}">${bk.space}</span>
