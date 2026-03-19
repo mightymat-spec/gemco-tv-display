@@ -17,12 +17,6 @@
     --text: #e8e4dc;
     --text-muted: #6b6760;
     --text-dim: #9e9891;
-    --red: #c94c4c;
-    --green: #4caa6e;
-    --blue: #4c7ec9;
-    --purple: #7e4cc9;
-    --teal: #4cb8c9;
-    --orange: #c97a4c;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,7 +29,6 @@
     font-family: 'DM Sans', sans-serif;
   }
 
-  /* Subtle grain texture */
   body::before {
     content: '';
     position: fixed; inset: 0;
@@ -43,7 +36,6 @@
     pointer-events: none; z-index: 1000;
   }
 
-  /* ── LAYOUT ── */
   .wrapper {
     display: grid;
     grid-template-rows: auto 1fr;
@@ -52,7 +44,6 @@
     gap: 24px;
   }
 
-  /* ── HEADER ── */
   header {
     display: flex;
     align-items: flex-end;
@@ -79,9 +70,7 @@
     margin-top: 6px;
   }
 
-  .clock-block {
-    text-align: right;
-  }
+  .clock-block { text-align: right; }
 
   .clock-block .time {
     font-family: 'DM Mono', monospace;
@@ -100,7 +89,6 @@
     letter-spacing: 0.08em;
   }
 
-  /* ── MAIN CONTENT ── */
   .content {
     display: grid;
     grid-template-columns: 1fr 1.15fr;
@@ -108,7 +96,7 @@
     min-height: 0;
   }
 
-  /* ── CALENDAR PANEL ── */
+  /* ── CALENDAR ── */
   .calendar-panel {
     display: flex;
     flex-direction: column;
@@ -146,7 +134,6 @@
     flex: 1;
     display: grid;
     grid-template-rows: auto 1fr;
-    gap: 0;
   }
 
   .day-headers {
@@ -170,7 +157,6 @@
     grid-template-columns: repeat(7, 1fr);
     grid-auto-rows: 1fr;
     gap: 4px;
-    flex: 1;
   }
 
   .day-cell {
@@ -187,20 +173,9 @@
     overflow: hidden;
   }
 
-  .day-cell.other-month {
-    background: transparent;
-    border-color: transparent;
-    opacity: 0.3;
-  }
-
-  .day-cell.today {
-    border-color: var(--gold);
-    background: rgba(201,168,76,0.07);
-  }
-
-  .day-cell.has-bookings {
-    border-color: rgba(255,255,255,0.13);
-  }
+  .day-cell.other-month { background: transparent; border-color: transparent; opacity: 0.3; }
+  .day-cell.today { border-color: var(--gold); background: rgba(201,168,76,0.07); }
+  .day-cell.has-bookings { border-color: rgba(255,255,255,0.13); }
 
   .day-num {
     font-family: 'DM Mono', monospace;
@@ -208,24 +183,11 @@
     color: var(--text-muted);
     line-height: 1;
   }
+  .day-cell.today .day-num { color: var(--gold); }
 
-  .day-cell.today .day-num {
-    color: var(--gold);
-    font-weight: 400;
-  }
+  .day-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
 
-  .day-dots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    margin-top: 2px;
-  }
-
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
   .booking-chip {
     font-size: 0.55rem;
@@ -238,7 +200,7 @@
     opacity: 0.9;
   }
 
-  /* ── LIST PANEL ── */
+  /* ── LIST ── */
   .list-panel {
     display: flex;
     flex-direction: column;
@@ -270,12 +232,18 @@
     border-radius: 20px;
   }
 
+  .last-updated {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
   .booking-list {
     flex: 1;
     overflow-y: hidden;
     display: flex;
     flex-direction: column;
-    gap: 8px;
     position: relative;
   }
 
@@ -286,6 +254,12 @@
     height: 60px;
     background: linear-gradient(to bottom, transparent, var(--bg));
     pointer-events: none;
+  }
+
+  .booking-list-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .booking-item {
@@ -299,12 +273,6 @@
     padding: 10px 14px;
     border-left: 3px solid transparent;
     flex-shrink: 0;
-    animation: slideIn 0.3s ease both;
-  }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(10px); }
-    to   { opacity: 1; transform: translateX(0); }
   }
 
   .booking-item.is-now {
@@ -313,9 +281,7 @@
     border-left-color: var(--gold);
   }
 
-  .booking-item.is-past {
-    opacity: 0.4;
-  }
+  .booking-item.is-past { opacity: 0.4; }
 
   .b-date {
     font-family: 'DM Mono', monospace;
@@ -323,39 +289,18 @@
     color: var(--text-muted);
     line-height: 1.5;
   }
-
-  .b-date strong {
-    display: block;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    font-weight: 400;
-  }
+  .b-date strong { display: block; font-size: 0.8rem; color: var(--text-dim); font-weight: 400; }
 
   .b-title {
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--text);
-    line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .b-sub {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .b-space {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
+  .b-space { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 
   .space-tag {
     font-family: 'DM Mono', monospace;
@@ -377,12 +322,6 @@
     border-radius: 3px;
   }
 
-  /* ── STATUS BAR ── */
-  .statusbar {
-    display: none;
-  }
-
-  /* ── LOADING / EMPTY ── */
   .empty-msg {
     font-family: 'DM Mono', monospace;
     font-size: 0.75rem;
@@ -392,22 +331,6 @@
     letter-spacing: 0.1em;
   }
 
-  .last-updated {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-  }
-
-  /* Scrolling list animation */
-  .booking-list-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: transform 0.6s ease;
-  }
-
-  /* ── DIVIDERS ── */
   .date-divider {
     font-family: 'DM Mono', monospace;
     font-size: 0.6rem;
@@ -420,22 +343,6 @@
 </style>
 </head>
 <body>
-
-<!--
-  ╔══════════════════════════════════════════════════════════╗
-  ║          GEMCO TV BOOKING DISPLAY — CONFIGURATION        ║
-  ╠══════════════════════════════════════════════════════════╣
-  ║  1. Find your Skedda iCal URLs:                          ║
-  ║     Skedda Admin → Spaces → each space → "Subscribe"    ║
-  ║     Copy the .ics URL for each space                     ║
-  ║                                                          ║
-  ║  2. Paste them into SPACES below (replace the examples)  ║
-  ║                                                          ║
-  ║  3. Host this file anywhere (Google Drive, Dropbox,      ║
-  ║     GitHub Pages, or a cheap web host) and open it       ║
-  ║     in a browser on your TV in fullscreen mode (F11)     ║
-  ╚══════════════════════════════════════════════════════════╝
--->
 
 <div class="wrapper">
   <header>
@@ -458,12 +365,8 @@
       </div>
       <div class="cal-grid">
         <div class="day-headers">
-          <div class="day-hdr">Sun</div>
-          <div class="day-hdr">Mon</div>
-          <div class="day-hdr">Tue</div>
-          <div class="day-hdr">Wed</div>
-          <div class="day-hdr">Thu</div>
-          <div class="day-hdr">Fri</div>
+          <div class="day-hdr">Sun</div><div class="day-hdr">Mon</div><div class="day-hdr">Tue</div>
+          <div class="day-hdr">Wed</div><div class="day-hdr">Thu</div><div class="day-hdr">Fri</div>
           <div class="day-hdr">Sat</div>
         </div>
         <div class="days-grid" id="daysGrid"></div>
@@ -488,247 +391,63 @@
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  CONFIGURATION — Edit this section with your Skedda URLs
-// ══════════════════════════════════════════════════════════
-const SPACES = [
-  {
-    name: "Theatre",
-    icalUrl: "https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644",
-    color: "#c9a84c"   // gold
-  },
-  {
-    name: "Bar & Foyer",
-    icalUrl: "https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645",
-    color: "#c94c4c"   // red
-  },
-  {
-    name: "Kitchen",
-    icalUrl: "https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646",
-    color: "#4caa6e"   // green
-  },
-  {
-    name: "Hall",
-    icalUrl: "https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647",
-    color: "#4c7ec9"   // blue
-  },
-  {
-    name: "Carriage",
-    icalUrl: "https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648",
-    color: "#4cb8c9"   // teal
-  },
-  {
-    name: "Car Park",
-    icalUrl: "https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649",
-    color: "#c97a4c"   // orange
-  }
-];
-
-// Refresh interval (milliseconds) — 10 minutes default
-const REFRESH_INTERVAL = 10 * 60 * 1000;
-
-// Multiple CORS proxies — tried in order until one works
-const CORS_PROXIES = [
-  { url: "https://api.codetabs.com/v1/proxy?quest=", json: false },
-  { url: "https://corsproxy.io/?", json: false },
-  { url: "https://api.allorigins.win/get?url=", json: true },
-  { url: "https://thingproxy.freeboard.io/fetch/", json: false }
-];
-
-// ══════════════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════════════
 let allBookings = [];
-let viewMonth   = new Date();
+let viewMonth = new Date();
 viewMonth.setDate(1);
 
-// ══════════════════════════════════════════════════════════
-//  CLOCK
-// ══════════════════════════════════════════════════════════
+// ── CLOCK ──
 function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent =
-    now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+    now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
   document.getElementById('dateStr').textContent =
-    now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ══════════════════════════════════════════════════════════
-//  iCAL PARSER  (minimal — handles standard Skedda output)
-// ══════════════════════════════════════════════════════════
-function parseIcal(text) {
-  const events = [];
-  const blocks = text.split('BEGIN:VEVENT');
-  blocks.shift(); // discard header
+// ── FETCH bookings.json (same origin — no CORS) ──
+async function fetchBookings() {
+  try {
+    const resp = await fetch('./data/bookings.json?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
 
-  for (const block of blocks) {
-    const get = (key) => {
-      // Handle folded lines (RFC5545 line folding)
-      const unfolded = block.replace(/\r?\n[ \t]/g, '');
-      const m = unfolded.match(new RegExp(`${key}(?:;[^:]+)?:(.+?)(?:\\r?\\n|$)`));
-      return m ? m[1].trim() : '';
-    };
+    allBookings = (json.bookings || []).map(b => ({
+      ...b,
+      start: new Date(b.start),
+      end:   new Date(b.end)
+    }));
 
-    const parseDt = (raw) => {
-      if (!raw) return null;
-      // Format: 20240615T090000Z or 20240615
-      const clean = raw.replace('Z','');
-      if (clean.includes('T')) {
-        const y = clean.slice(0,4), mo = clean.slice(4,6), d = clean.slice(6,8);
-        const h = clean.slice(9,11), mi = clean.slice(11,13), s = clean.slice(13,15)||'00';
-        // Check if it has Z (UTC) or is local
-        const isUtc = raw.endsWith('Z');
-        if (isUtc) return new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
-        return new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}`);
-      } else {
-        // All-day: YYYYMMDD
-        const y = clean.slice(0,4), mo = clean.slice(4,6), d = clean.slice(6,8);
-        return new Date(`${y}-${mo}-${d}T00:00:00`);
-      }
-    };
+    const updated = new Date(json.updated);
+    document.getElementById('lastUpdated').textContent =
+      'Updated ' + updated.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
 
-    const dtstart = parseDt(get('DTSTART'));
-    const dtend   = parseDt(get('DTEND'));
-    const rawSummary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';') || 'Booking';
-    // Skedda format: "Booker Name (Org): Event Title (🟥 space + N others) [Unpaid]"
-    // Step 1: strip booker name (everything up to and including first ": ")
-    let summary = rawSummary.includes(': ') ? rawSummary.split(': ').slice(1).join(': ') : rawSummary;
-    // Step 2: strip space tag at end e.g. "(🟥 theatre)" or "(🟥 theatre + 2 others)"
-    summary = summary.replace(/\s*\([^)]*(?:theatre|hall|kitchen|foyer|carriage|car park|bar)[^)]*\)/gi, '');
-    // Step 3: strip payment status e.g. "[Unpaid]" "[Paid]"
-    summary = summary.replace(/\s*\[(paid|unpaid)\]/gi, '');
-    // Step 4: strip any remaining dollar amounts
-    summary = summary.replace(/[-–]?\s*(cost|hire|fee|price|aud|total)?:?\s*\$[\d,]+(\.\d{1,2})?/gi, '');
-    summary = summary.trim() || 'Booking';
-    const desc    = get('DESCRIPTION').replace(/\\,/g,',').replace(/\\n/g,' ') || '';
-    const loc     = get('LOCATION') || '';
-
-    if (dtstart) {
-      events.push({ start: dtstart, end: dtend, title: summary, desc, location: loc });
-    }
+    renderAll();
+  } catch(e) {
+    console.error('Failed to load bookings.json:', e);
+    document.getElementById('lastUpdated').textContent = 'Failed to load — retrying…';
   }
-  return events;
 }
 
-// ══════════════════════════════════════════════════════════
-//  FETCH ALL SPACES
-// ══════════════════════════════════════════════════════════
-async function fetchAllSpaces() {
-  allBookings = [];
-
-  // If all URLs are placeholders, use demo data
-  const allPlaceholder = SPACES.every(s => s.icalUrl.includes('YOUR_SPACE'));
-  if (allPlaceholder) {
-    loadDemoData();
-    return;
-  }
-
-  const promises = SPACES.map(async (space) => {
-    if (space.icalUrl.includes('YOUR_SPACE')) return;
-    let text = null;
-    for (const proxy of CORS_PROXIES) {
-      try {
-        const proxyUrl = proxy.url + encodeURIComponent(space.icalUrl);
-        const resp = await fetch(proxyUrl);
-        if (!resp.ok) continue;
-        if (proxy.json) {
-          const json = await resp.json();
-          text = json.contents;
-        } else {
-          text = await resp.text();
-        }
-        if (text && text.includes('BEGIN:VCALENDAR')) break; // success
-        text = null; // bad response, try next proxy
-      } catch(e) {
-        console.warn(`Proxy ${proxy.url} failed for ${space.name}:`, e.message);
-      }
-    }
-    if (!text) { console.warn(`All proxies failed for ${space.name}`); return; }
-    const events = parseIcal(text);
-    events.forEach(ev => allBookings.push({ ...ev, space: space.name, color: space.color }));
-  });
-
-  await Promise.all(promises);
-
-  // Sort by start time
-  allBookings.sort((a,b) => a.start - b.start);
-
-  document.getElementById('lastUpdated').textContent =
-    'Updated ' + new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-
-  renderAll();
-}
-
-// ══════════════════════════════════════════════════════════
-//  DEMO DATA (shown until real URLs are configured)
-// ══════════════════════════════════════════════════════════
-function loadDemoData() {
-  const now = new Date();
-  const base = (daysOffset, h, m) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() + daysOffset);
-    d.setHours(h, m, 0, 0);
-    return d;
-  };
-
-  const demo = [
-    { title: "Drama Rehearsal",     start: base(0,9,0),  end: base(0,12,0), space: "Main Hall",      color: "#c9a84c" },
-    { title: "Board Meeting",       start: base(0,14,0), end: base(0,16,0), space: "Meeting Room",   color: "#4caa6e" },
-    { title: "Youth Theatre",       start: base(1,10,0), end: base(1,13,0), space: "Studio",         color: "#4c7ec9" },
-    { title: "Set Construction",    start: base(1,13,0), end: base(1,17,0), space: "Main Hall",      color: "#c9a84c" },
-    { title: "Costume Workshop",    start: base(2,9,30), end: base(2,12,0), space: "Green Room",     color: "#4cb8c9" },
-    { title: "Full Run-Through",    start: base(3,18,0), end: base(3,22,0), space: "Main Hall",      color: "#c9a84c" },
-    { title: "Tech Rehearsal",      start: base(4,17,0), end: base(4,21,0), space: "Main Hall",      color: "#c9a84c" },
-    { title: "Script Reading",      start: base(5,10,0), end: base(5,12,0), space: "Rehearsal Room", color: "#c94c4c" },
-    { title: "Auditions",           start: base(6,9,0),  end: base(6,17,0), space: "Main Hall",      color: "#c9a84c" },
-    { title: "Committee Meeting",   start: base(7,19,0), end: base(7,21,0), space: "Meeting Room",   color: "#4caa6e" },
-    { title: "Dance Rehearsal",     start: base(9,10,0), end: base(9,13,0), space: "Studio",         color: "#4c7ec9" },
-    { title: "Production Meeting",  start: base(10,18,0),end: base(10,20,0),space: "Foyer",          color: "#c97a4c" },
-    { title: "Opening Night",       start: base(14,19,0),end: base(14,23,0),space: "Main Hall",      color: "#c9a84c" },
-    { title: "Matinee Performance", start: base(15,14,0),end: base(15,17,0),space: "Main Hall",      color: "#c9a84c" },
-    { title: "Evening Performance", start: base(15,19,0),end: base(15,22,0),space: "Main Hall",      color: "#c9a84c" },
-  ];
-
-  // Add a few more spread across the month
-  for (let i = 17; i < 30; i += 3) {
-    demo.push({
-      title: ["Rehearsal", "Workshop", "Meeting", "Reading"][i%4],
-      start: base(i, 10 + (i%4), 0), end: base(i, 13 + (i%4), 0),
-      space: SPACES[i % SPACES.length].name,
-      color: SPACES[i % SPACES.length].color
-    });
-  }
-
-  allBookings = demo.sort((a,b) => a.start - b.start);
-  document.getElementById('lastUpdated').textContent = 'Demo mode — configure URLs above';
-  renderAll();
-}
-
-// ══════════════════════════════════════════════════════════
-//  RENDER CALENDAR
-// ══════════════════════════════════════════════════════════
+// ── CALENDAR ──
 function renderCalendar() {
   const year  = viewMonth.getFullYear();
   const month = viewMonth.getMonth();
 
   document.getElementById('monthLabel').textContent =
-    viewMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+    viewMonth.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
 
-  const firstDay = new Date(year, month, 1).getDay();
+  const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
 
-  const today = new Date();
-  today.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
 
-  // Build a set of day keys that have bookings
   const bookedDays = {};
   for (const bk of allBookings) {
-    const d = new Date(bk.start);
-    if (d.getFullYear() === year && d.getMonth() === month) {
-      const key = d.getDate();
+    if (bk.start.getFullYear() === year && bk.start.getMonth() === month) {
+      const key = bk.start.getDate();
       if (!bookedDays[key]) bookedDays[key] = [];
       bookedDays[key].push(bk);
     }
@@ -737,7 +456,6 @@ function renderCalendar() {
   const grid = document.getElementById('daysGrid');
   grid.innerHTML = '';
 
-  // Prev month padding
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className = 'day-cell other-month';
@@ -745,45 +463,35 @@ function renderCalendar() {
     grid.appendChild(cell);
   }
 
-  // This month
   for (let d = 1; d <= daysInMonth; d++) {
     const cellDate = new Date(year, month, d);
-    const cell = document.createElement('div');
-    const isToday = cellDate.getTime() === today.getTime();
-    const bks = bookedDays[d] || [];
+    const isToday  = cellDate.getTime() === today.getTime();
+    const bks      = bookedDays[d] || [];
+    const cell     = document.createElement('div');
 
     cell.className = 'day-cell' + (isToday ? ' today' : '') + (bks.length ? ' has-bookings' : '');
     cell.dataset.date = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
     let inner = `<div class="day-num">${d}</div>`;
-
     if (bks.length) {
       inner += '<div class="day-dots">';
-      // Show dots for unique spaces
-      const seenSpaces = new Set();
+      const seen = new Set();
       bks.forEach(bk => {
-        if (!seenSpaces.has(bk.space)) {
-          seenSpaces.add(bk.space);
-          inner += `<div class="dot" style="background:${bk.color}" title="${bk.space}"></div>`;
+        if (!seen.has(bk.space)) {
+          seen.add(bk.space);
+          inner += `<div class="dot" style="background:${bk.color}"></div>`;
         }
       });
       inner += '</div>';
-
-      // Show first booking chip if space allows
       inner += `<div class="booking-chip" style="background:${bks[0].color}22;color:${bks[0].color}">${bks[0].title}</div>`;
-      if (bks.length > 1) {
-        inner += `<div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+${bks.length - 1} more</div>`;
-      }
+      if (bks.length > 1) inner += `<div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+${bks.length-1} more</div>`;
     }
 
     cell.innerHTML = inner;
-
-    // Click to jump list to this date
     cell.addEventListener('click', () => scrollListToDate(cell.dataset.date));
     grid.appendChild(cell);
   }
 
-  // Next month padding
   const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
   let nextDay = 1;
   for (let i = firstDay + daysInMonth; i < totalCells; i++) {
@@ -794,72 +502,59 @@ function renderCalendar() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  RENDER LIST
-// ══════════════════════════════════════════════════════════
+// ── LIST ──
 function renderList() {
   const listEl = document.getElementById('bookingListInner');
   const now    = new Date();
-
-  // Show from start of today onward
   const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+
   const upcoming = allBookings.filter(bk => bk.end > startOfToday);
-  const past     = allBookings.filter(bk => bk.end <= startOfToday);
 
   document.getElementById('countBadge').textContent =
     upcoming.length + (upcoming.length === 1 ? ' event' : ' events');
 
-  if (!upcoming.length && !past.length) {
-    listEl.innerHTML = '<div class="empty-msg">No bookings found</div>';
+  if (!upcoming.length) {
+    listEl.innerHTML = '<div class="empty-msg">No upcoming bookings</div>';
     return;
   }
 
+  const fmtDate = d => d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
+  const fmtTime = d => d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
+
   let html = '';
-  let lastDateStr = '';
+  let lastDate = '';
 
-  const fmtDate = (d) => d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
-  const fmtTime = (d) => d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-
-  const renderBk = (bk) => {
+  for (const bk of upcoming) {
     const isNow  = bk.start <= now && bk.end > now;
-    const isPast = bk.end   <= now;
+    const isPast = bk.end <= now;
     const dateStr = fmtDate(bk.start);
 
-    let divider = '';
-    if (dateStr !== lastDateStr) {
-      lastDateStr = dateStr;
+    if (dateStr !== lastDate) {
+      lastDate = dateStr;
       const isToday = fmtDate(now) === dateStr;
-      divider = `<div class="date-divider">${isToday ? '▸ Today — ' : ''}${dateStr}</div>`;
+      html += `<div class="date-divider">${isToday ? '▸ Today — ' : ''}${dateStr}</div>`;
     }
 
     const cls = isNow ? 'booking-item is-now' : isPast ? 'booking-item is-past' : 'booking-item';
-
-    return divider + `
+    html += `
       <div class="${cls}" style="border-left-color:${bk.color}" data-date="${bk.start.toISOString().slice(0,10)}">
         <div class="b-date">
           <strong>${fmtTime(bk.start)}</strong>
           ${fmtTime(bk.end)}
         </div>
-        <div>
-          <div class="b-title">${bk.title}</div>
-        </div>
+        <div><div class="b-title">${bk.title}</div></div>
         <div class="b-space">
           <span class="space-tag" style="background:${bk.color}22;color:${bk.color}">${bk.space}</span>
           ${isNow ? '<span class="now-pill">Now</span>' : ''}
         </div>
       </div>`;
-  };
+  }
 
-  html += upcoming.map(renderBk).join('');
   listEl.innerHTML = html;
-
-  // Auto-scroll: nudge past current event
   autoScroll();
 }
 
-// ══════════════════════════════════════════════════════════
-//  AUTO-SCROLL (cycles through list slowly)
-// ══════════════════════════════════════════════════════════
+// ── AUTO-SCROLL ──
 let scrollTimer = null;
 let scrollPos   = 0;
 
@@ -869,17 +564,14 @@ function autoScroll() {
   const innerEl = document.getElementById('bookingListInner');
   scrollPos = 0;
 
-  // Scroll to "now" first
   const nowItem = innerEl.querySelector('.is-now');
   if (nowItem) {
     scrollPos = Math.max(0, nowItem.offsetTop - 20);
     listEl.scrollTop = scrollPos;
   }
 
-  const maxScroll = innerEl.scrollHeight - listEl.clientHeight;
-
-  // Slow cycle scroll every 5s
   scrollTimer = setInterval(() => {
+    const maxScroll = innerEl.scrollHeight - listEl.clientHeight;
     if (maxScroll <= 0) return;
     scrollPos += 90;
     if (scrollPos >= maxScroll) scrollPos = 0;
@@ -888,52 +580,32 @@ function autoScroll() {
 }
 
 function scrollListToDate(dateStr) {
-  const listEl  = document.getElementById('bookingList');
-  const item    = document.querySelector(`[data-date="${dateStr}"]`);
+  const listEl = document.getElementById('bookingList');
+  const item   = document.querySelector(`[data-date="${dateStr}"]`);
   if (item) {
     clearInterval(scrollTimer);
     listEl.scrollTo({ top: item.offsetTop - 20, behavior: 'smooth' });
-    // Resume auto-scroll after 30s
     setTimeout(autoScroll, 30000);
   }
 }
 
-// ══════════════════════════════════════════════════════════
-//  COMBINED RENDER
-// ══════════════════════════════════════════════════════════
-function renderAll() {
-  renderCalendar();
-  renderList();
-}
+function renderAll() { renderCalendar(); renderList(); }
 
-// ══════════════════════════════════════════════════════════
-//  NAVIGATION BUTTONS
-// ══════════════════════════════════════════════════════════
 document.getElementById('prevMonth').addEventListener('click', () => {
-  viewMonth.setMonth(viewMonth.getMonth() - 1);
-  renderCalendar();
+  viewMonth.setMonth(viewMonth.getMonth() - 1); renderCalendar();
 });
 document.getElementById('nextMonth').addEventListener('click', () => {
-  viewMonth.setMonth(viewMonth.getMonth() + 1);
-  renderCalendar();
+  viewMonth.setMonth(viewMonth.getMonth() + 1); renderCalendar();
 });
 
-// ══════════════════════════════════════════════════════════
-//  INIT & AUTO-REFRESH
-// ══════════════════════════════════════════════════════════
-fetchAllSpaces();
-setInterval(fetchAllSpaces, REFRESH_INTERVAL);
+// Load bookings, then refresh every 5 minutes
+fetchBookings();
+setInterval(fetchBookings, 5 * 60 * 1000);
+setInterval(renderList, 60 * 1000);
 
-// Re-render list every minute (to update "Now" status)
-setInterval(() => {
-  renderList();
-}, 60 * 1000);
-
-// Fullscreen hint on click (useful for TV setup)
 document.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
+  if (!document.fullscreenElement)
     document.documentElement.requestFullscreen().catch(() => {});
-  }
 });
 </script>
 </body>
