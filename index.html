@@ -527,9 +527,8 @@ const SPACES = [
 // Refresh interval (milliseconds) — 10 minutes default
 const REFRESH_INTERVAL = 10 * 60 * 1000;
 
-// CORS proxy to bypass browser restrictions when fetching iCal URLs
-// allorigins.win is a free service — alternatively set up your own
-const CORS_PROXY = "https://corsproxy.io/?";
+// CORS proxy — corsproxy.io works reliably from GitHub Pages
+const CORS_PROXY = "https://corsproxy.io/?url=";
 
 // ══════════════════════════════════════════════════════════
 //  STATE
@@ -588,8 +587,16 @@ function parseIcal(text) {
     const dtstart = parseDt(get('DTSTART'));
     const dtend   = parseDt(get('DTEND'));
     const rawSummary = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';') || 'Booking';
-    // Strip any cost/price info (e.g. "$120.00", "- $50", "Cost: $80", "(AUD 200)")
-    const summary = rawSummary.replace(/[-–]?\s*(cost|hire|fee|price|aud|total)?:?\s*\$[\d,]+(\.\d{1,2})?/gi, '').replace(/\(AUD\s*[\d,]+(\.\d{1,2})?\)/gi, '').trim();
+    // Skedda format: "Booker Name (Org): Event Title (🟥 space + N others) [Unpaid]"
+    // Step 1: strip booker name (everything up to and including first ": ")
+    let summary = rawSummary.includes(': ') ? rawSummary.split(': ').slice(1).join(': ') : rawSummary;
+    // Step 2: strip space tag at end e.g. "(🟥 theatre)" or "(🟥 theatre + 2 others)"
+    summary = summary.replace(/\s*\([^)]*(?:theatre|hall|kitchen|foyer|carriage|car park|bar)[^)]*\)/gi, '');
+    // Step 3: strip payment status e.g. "[Unpaid]" "[Paid]"
+    summary = summary.replace(/\s*\[(paid|unpaid)\]/gi, '');
+    // Step 4: strip any remaining dollar amounts
+    summary = summary.replace(/[-–]?\s*(cost|hire|fee|price|aud|total)?:?\s*\$[\d,]+(\.\d{1,2})?/gi, '');
+    summary = summary.trim() || 'Booking';
     const desc    = get('DESCRIPTION').replace(/\\,/g,',').replace(/\\n/g,' ') || '';
     const loc     = get('LOCATION') || '';
 
