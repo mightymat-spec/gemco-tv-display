@@ -527,8 +527,13 @@ const SPACES = [
 // Refresh interval (milliseconds) — 10 minutes default
 const REFRESH_INTERVAL = 10 * 60 * 1000;
 
-// CORS proxy — corsproxy.io works reliably from GitHub Pages
-const CORS_PROXY = "https://corsproxy.io/?";
+// Multiple CORS proxies — tried in order until one works
+const CORS_PROXIES = [
+  { url: "https://api.codetabs.com/v1/proxy?quest=", json: false },
+  { url: "https://corsproxy.io/?", json: false },
+  { url: "https://api.allorigins.win/get?url=", json: true },
+  { url: "https://thingproxy.freeboard.io/fetch/", json: false }
+];
 
 // ══════════════════════════════════════════════════════════
 //  STATE
@@ -621,18 +626,28 @@ async function fetchAllSpaces() {
   }
 
   const promises = SPACES.map(async (space) => {
-    if (space.icalUrl.includes('YOUR_SPACE')) return; // skip unconfigured
-    try {
-      const proxyUrl = CORS_PROXY + encodeURIComponent(space.icalUrl);
-      const resp = await fetch(proxyUrl);
-      const text = await resp.text();
-      const events = parseIcal(text);
-      events.forEach(ev => {
-        allBookings.push({ ...ev, space: space.name, color: space.color });
-      });
-    } catch(e) {
-      console.warn(`Failed to fetch ${space.name}:`, e);
+    if (space.icalUrl.includes('YOUR_SPACE')) return;
+    let text = null;
+    for (const proxy of CORS_PROXIES) {
+      try {
+        const proxyUrl = proxy.url + encodeURIComponent(space.icalUrl);
+        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+        if (!resp.ok) continue;
+        if (proxy.json) {
+          const json = await resp.json();
+          text = json.contents;
+        } else {
+          text = await resp.text();
+        }
+        if (text && text.includes('BEGIN:VCALENDAR')) break; // success
+        text = null; // bad response, try next proxy
+      } catch(e) {
+        console.warn(`Proxy ${proxy.url} failed for ${space.name}:`, e.message);
+      }
     }
+    if (!text) { console.warn(`All proxies failed for ${space.name}`); return; }
+    const events = parseIcal(text);
+    events.forEach(ev => allBookings.push({ ...ev, space: space.name, color: space.color }));
   });
 
   await Promise.all(promises);
