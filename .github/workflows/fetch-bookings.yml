@@ -1,0 +1,126 @@
+name: Fetch Skedda Bookings
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 minutes
+  workflow_dispatch:          # allow manual trigger
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch iCal feeds and generate bookings.json
+        run: |
+          node -e "
+          const https = require('https');
+          const fs = require('fs');
+
+          const SPACES = [
+            { name: 'Theatre',    color: '#c9a84c', url: 'https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644' },
+            { name: 'Bar & Foyer',color: '#c94c4c', url: 'https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645' },
+            { name: 'Kitchen',    color: '#4caa6e', url: 'https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646' },
+            { name: 'Hall',       color: '#4c7ec9', url: 'https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647' },
+            { name: 'Carriage',   color: '#4cb8c9', url: 'https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648' },
+            { name: 'Car Park',   color: '#c97a4c', url: 'https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649' }
+          ];
+
+          function fetch(url) {
+            return new Promise((resolve, reject) => {
+              https.get(url, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve(data));
+              }).on('error', reject);
+            });
+          }
+
+          function unfold(text) {
+            return text.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
+          }
+
+          function get(block, key) {
+            const m = block.match(new RegExp(key + '(?:;[^:]+)?:(.+?)(?:\r?\n|$)'));
+            return m ? m[1].trim() : '';
+          }
+
+          function parseDt(raw) {
+            if (!raw) return null;
+            const isUtc = raw.endsWith('Z');
+            const clean = raw.replace('Z','');
+            if (clean.includes('T')) {
+              const y=clean.slice(0,4), mo=clean.slice(4,6), d=clean.slice(6,8);
+              const h=clean.slice(9,11), mi=clean.slice(11,13), s=clean.slice(13,15)||'00';
+              return isUtc
+                ? new Date(y+'-'+mo+'-'+d+'T'+h+':'+mi+':'+s+'Z').toISOString()
+                : new Date(y+'-'+mo+'-'+d+'T'+h+':'+mi+':'+s).toISOString();
+            } else {
+              const y=clean.slice(0,4), mo=clean.slice(4,6), d=clean.slice(6,8);
+              return new Date(y+'-'+mo+'-'+d+'T00:00:00').toISOString();
+            }
+          }
+
+          function cleanTitle(raw) {
+            // Strip 'Booker Name (Org): ' prefix
+            let t = raw.includes(': ') ? raw.split(': ').slice(1).join(': ') : raw;
+            // Strip space tag suffix e.g. '(🟥 theatre + 2 others)'
+            t = t.replace(/\s*\([^)]*(?:theatre|hall|kitchen|foyer|carriage|car park|bar|rattler)[^)]*\)/gi, '');
+            // Strip [Unpaid] / [Paid]
+            t = t.replace(/\s*\[(paid|unpaid)\]/gi, '');
+            // Strip dollar amounts
+            t = t.replace(/[-\u2013]?\s*(?:cost|hire|fee|price|aud|total)?:?\s*\\\$[\d,]+(?:\.\d{1,2})?/gi, '');
+            return t.trim() || 'Booking';
+          }
+
+          function parseIcal(text, spaceName, color) {
+            const unfolded = unfold(text);
+            const blocks = unfolded.split('BEGIN:VEVENT');
+            blocks.shift();
+            const events = [];
+            for (const block of blocks) {
+              const start = parseDt(get(block, 'DTSTART'));
+              const end   = parseDt(get(block, 'DTEND'));
+              const raw   = get(block, 'SUMMARY')
+                .replace(/\\\\,/g,',').replace(/\\\\n/g,' ').replace(/\\\\;/g,';');
+              if (!start) continue;
+              events.push({ start, end, title: cleanTitle(raw), space: spaceName, color });
+            }
+            return events;
+          }
+
+          async function main() {
+            const allBookings = [];
+            for (const space of SPACES) {
+              try {
+                const text = await fetch(space.url);
+                const events = parseIcal(text, space.name, space.color);
+                allBookings.push(...events);
+                console.log('Fetched ' + events.length + ' events for ' + space.name);
+              } catch(e) {
+                console.error('Failed ' + space.name + ':', e.message);
+              }
+            }
+            allBookings.sort((a,b) => new Date(a.start) - new Date(b.start));
+            fs.mkdirSync('data', { recursive: true });
+            fs.writeFileSync('data/bookings.json', JSON.stringify({
+              updated: new Date().toISOString(),
+              bookings: allBookings
+            }, null, 2));
+            console.log('Wrote ' + allBookings.length + ' total bookings to data/bookings.json');
+          }
+
+          main().catch(e => { console.error(e); process.exit(1); });
+          "
+
+      - name: Commit bookings.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/bookings.json
+          git diff --cached --quiet || git commit -m "Update bookings data [skip ci]"
+          git push
