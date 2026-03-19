@@ -631,7 +631,7 @@ async function fetchAllSpaces() {
     for (const proxy of CORS_PROXIES) {
       try {
         const proxyUrl = proxy.url + encodeURIComponent(space.icalUrl);
-        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+        const resp = await fetch(proxyUrl);
         if (!resp.ok) continue;
         if (proxy.json) {
           const json = await resp.json();
