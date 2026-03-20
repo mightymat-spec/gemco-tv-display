@@ -85,6 +85,7 @@ async function main() {
 
   allBookings.sort((a,b) => a.start - b.start);
 
+  // ── Calendar ──
   const calYear  = now.getFullYear();
   const calMonth = now.getMonth();
   const firstDay    = new Date(calYear, calMonth, 1).getDay();
@@ -102,29 +103,42 @@ async function main() {
     }
   }
 
-  let calCells = '';
-  for (let i = firstDay-1; i >= 0; i--)
-    calCells += '<div class="day-cell other-month"><div class="day-num">'+(daysInPrev-i)+'</div></div>';
+  // Calendar cells — table-based for Android 4.4 compatibility
+  let calRows = '';
+  let cellCount = 0;
+  let row = '<tr>';
+  // Padding before first day
+  for (let i = 0; i < firstDay; i++) {
+    row += '<td class="dc om"><span class="dn">'+(daysInPrev - firstDay + i + 1)+'</span></td>';
+    cellCount++;
+  }
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const isToday = dateStr === todayStr;
     const bks = bookedDays[d] || [];
-    let cls = 'day-cell' + (isToday?' today':'') + (bks.length?' has-bookings':'');
-    let inner = '<div class="day-num">'+d+'</div>';
+    let tdClass = 'dc' + (isToday?' td':'') + (bks.length?' hb':'');
+    let inner = '<span class="dn'+(isToday?' tdn':'')+'">'+d+'</span>';
     if (bks.length) {
       const seen = new Set();
-      inner += '<div class="day-dots">';
-      bks.forEach(bk => { if(!seen.has(bk.space)){seen.add(bk.space);inner+='<div class="dot" style="background:'+bk.color+'"></div>';} });
+      inner += '<div class="dots">';
+      bks.forEach(bk => { if(!seen.has(bk.space)){seen.add(bk.space);inner+='<span class="dot" style="background:'+bk.color+'"></span>';} });
       inner += '</div>';
-      inner += '<div class="booking-chip" style="background:'+bks[0].color+'22;color:'+bks[0].color+'">'+esc(bks[0].title)+'</div>';
-      if (bks.length>1) inner += '<div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+'+(bks.length-1)+' more</div>';
+      inner += '<div class="chip" style="background:'+bks[0].color+'33;color:'+bks[0].color+'">'+esc(bks[0].title)+'</div>';
+      if (bks.length>1) inner += '<div class="more">+'+(bks.length-1)+'</div>';
     }
-    calCells += '<div class="'+cls+'">'+inner+'</div>';
+    row += '<td class="'+tdClass+'">'+inner+'</td>';
+    cellCount++;
+    if (cellCount % 7 === 0) { calRows += row+'</tr>'; row = '<tr>'; }
   }
-  const totalCells = Math.ceil((firstDay+daysInMonth)/7)*7;
-  for (let i=firstDay+daysInMonth,nd=1; i<totalCells; i++,nd++)
-    calCells += '<div class="day-cell other-month"><div class="day-num">'+nd+'</div></div>';
+  // Pad end
+  let nd = 1;
+  while (cellCount % 7 !== 0) {
+    row += '<td class="dc om"><span class="dn">'+nd+'</span></td>';
+    cellCount++; nd++;
+  }
+  if (row !== '<tr>') calRows += row+'</tr>';
 
+  // ── Booking list ──
   const startOfToday = new Date(now); startOfToday.setHours(0,0,0,0);
   const upcoming = allBookings.filter(bk => bk.end > startOfToday);
 
@@ -135,101 +149,121 @@ async function main() {
     const isToday2 = fmtDate(now) === dateStr;
     if (dateStr !== lastDate) {
       lastDate = dateStr;
-      listHtml += '<div class="date-divider">'+(isToday2?'&#9658; Today &mdash; ':'')+esc(dateStr)+'</div>';
+      listHtml += '<div class="divider">'+(isToday2?'&#9658; Today &mdash; ':'')+esc(dateStr)+'</div>';
     }
     const isNow = bk.start <= now && bk.end > now;
-    const cls = isNow ? 'booking-item is-now' : 'booking-item';
-    listHtml += '<div class="'+cls+'" style="border-left-color:'+bk.color+'">'
-      +'<div class="b-date"><strong>'+fmtTime(bk.start)+'</strong>'+fmtTime(bk.end)+'</div>'
-      +'<div><div class="b-title">'+esc(bk.title)+'</div></div>'
-      +'<div class="b-space"><span class="space-tag" style="background:'+bk.color+'22;color:'+bk.color+'">'+esc(bk.space)+'</span>'
-      +(isNow ? '<span class="now-pill">Now</span>' : '')
-      +'</div></div>';
+    const rowBg = isNow ? '#1a1800' : '#151518';
+    const leftBorder = isNow ? '3px solid #c9a84c' : '3px solid '+bk.color;
+    listHtml += '<table class="bi" style="background:'+rowBg+';border-left:'+leftBorder+'" cellpadding="0" cellspacing="0">'
+      +'<tr>'
+      +'<td class="bt"><strong>'+fmtTime(bk.start)+'</strong><br>'+fmtTime(bk.end)+'</td>'
+      +'<td class="btitle">'+esc(bk.title)+(isNow?'<span class="now">Now</span>':'')+'</td>'
+      +'<td class="bspace"><span class="stag" style="background:'+bk.color+'33;color:'+bk.color+'">'+esc(bk.space)+'</span></td>'
+      +'</tr></table>';
   }
-  if (!listHtml) listHtml = '<div class="empty-msg">No upcoming bookings</div>';
+  if (!listHtml) listHtml = '<div class="empty">No upcoming bookings</div>';
 
   const updatedStr = fmtTime(now);
   const countStr = upcoming.length + (upcoming.length===1?' event':' events');
 
-  const lines = [
-    '<!DOCTYPE html>',
-    '<html lang="en"><head>',
-    '<meta charset="UTF-8">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    '<title>Gemco Venue Bookings</title>',
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">',
-    '<style>',
-    ':root{--bg:#0d0d0f;--surface:#151518;--border:rgba(255,255,255,0.07);--gold:#c9a84c;--gold-dim:#7a6230;--text:#e8e4dc;--text-muted:#6b6760;--text-dim:#9e9891;}',
-    '*{margin:0;padding:0;box-sizing:border-box;}',
-    'html,body{width:100%;height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:\'DM Sans\',sans-serif;}',
-    '.wrapper{display:grid;grid-template-rows:auto 1fr;height:100vh;padding:28px 36px 24px;gap:24px;}',
-    'header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:18px;}',
-    '.venue-name{font-family:\'Playfair Display\',serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:var(--text);line-height:1;}',
-    '.venue-sub{font-family:\'DM Mono\',monospace;font-size:0.72rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-top:6px;}',
-    '.clock-block{text-align:right;}',
-    '.time{font-family:\'DM Mono\',monospace;font-size:clamp(2rem,3.5vw,3rem);font-weight:300;letter-spacing:0.05em;color:var(--text);line-height:1;}',
-    '.date{font-size:0.8rem;color:var(--text-muted);margin-top:5px;letter-spacing:0.08em;}',
-    '.content{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;min-height:0;}',
-    '.calendar-panel{display:flex;flex-direction:column;gap:16px;}',
-    '.month-label{font-family:\'Playfair Display\',serif;font-size:clamp(1.2rem,2vw,1.8rem);font-weight:400;color:var(--text);text-align:center;}',
-    '.cal-grid{flex:1;display:grid;grid-template-rows:auto 1fr;}',
-    '.day-headers{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}',
-    '.day-hdr{font-family:\'DM Mono\',monospace;font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);text-align:center;padding:4px 0;}',
-    '.days-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:4px;}',
-    '.day-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:3px;min-height:0;overflow:hidden;}',
-    '.day-cell.other-month{background:transparent;border-color:transparent;opacity:0.3;}',
-    '.day-cell.today{border-color:var(--gold);background:rgba(201,168,76,0.07);}',
-    '.day-cell.has-bookings{border-color:rgba(255,255,255,0.13);}',
-    '.day-num{font-family:\'DM Mono\',monospace;font-size:0.75rem;color:var(--text-muted);line-height:1;}',
-    '.day-cell.today .day-num{color:var(--gold);}',
-    '.day-dots{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px;}',
-    '.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}',
-    '.booking-chip{font-size:0.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 4px;border-radius:3px;line-height:1.4;opacity:0.9;}',
-    '.list-panel{display:flex;flex-direction:column;gap:14px;min-height:0;}',
-    '.list-header{display:flex;align-items:center;justify-content:space-between;}',
-    '.list-title{font-family:\'Playfair Display\',serif;font-size:clamp(1.2rem,2vw,1.8rem);font-weight:400;color:var(--text);}',
-    '.badge{font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--gold);background:rgba(201,168,76,0.1);border:1px solid var(--gold-dim);padding:3px 9px;border-radius:20px;}',
-    '.last-updated{font-family:\'DM Mono\',monospace;font-size:0.6rem;color:var(--text-muted);}',
-    '.booking-list{flex:1;overflow-y:hidden;display:flex;flex-direction:column;position:relative;}',
-    '.booking-list::after{content:\'\';position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none;}',
-    '.booking-list-inner{display:flex;flex-direction:column;gap:8px;}',
-    '.booking-item{display:grid;grid-template-columns:90px 1fr auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;border-left:3px solid transparent;flex-shrink:0;}',
-    '.booking-item.is-now{background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.25);border-left-color:var(--gold);}',
-    '.b-date{font-family:\'DM Mono\',monospace;font-size:0.7rem;color:var(--text-muted);line-height:1.5;}',
-    '.b-date strong{display:block;font-size:0.8rem;color:var(--text-dim);font-weight:400;}',
-    '.b-title{font-size:0.9rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-    '.b-space{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}',
-    '.space-tag{font-family:\'DM Mono\',monospace;font-size:0.6rem;padding:3px 8px;border-radius:4px;white-space:nowrap;}',
-    '.now-pill{font-family:\'DM Mono\',monospace;font-size:0.55rem;text-transform:uppercase;color:var(--gold);background:rgba(201,168,76,0.15);padding:2px 6px;border-radius:3px;}',
-    '.empty-msg{font-family:\'DM Mono\',monospace;font-size:0.75rem;color:var(--text-muted);text-align:center;padding:40px 20px;}',
-    '.date-divider{font-family:\'DM Mono\',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-dim);padding:6px 0 2px;flex-shrink:0;}',
-    '</style></head><body>',
-    '<div class="wrapper">',
-    '<header><div class="logo-block"><div class="venue-name">Gemco</div><div class="venue-sub">Venue Bookings</div></div>',
-    '<div class="clock-block"><div class="time" id="clock">--:--</div><div class="date" id="dateStr"></div></div></header>',
-    '<div class="content">',
-    '<div class="calendar-panel">',
-    '<div class="month-label">'+monthLabel+'</div>',
-    '<div class="cal-grid">',
-    '<div class="day-headers"><div class="day-hdr">Sun</div><div class="day-hdr">Mon</div><div class="day-hdr">Tue</div><div class="day-hdr">Wed</div><div class="day-hdr">Thu</div><div class="day-hdr">Fri</div><div class="day-hdr">Sat</div></div>',
-    '<div class="days-grid">'+calCells+'</div>',
-    '</div></div>',
-    '<div class="list-panel">',
-    '<div class="list-header"><div class="list-title">Upcoming Bookings</div>',
-    '<div style="display:flex;align-items:center;gap:12px;"><div class="last-updated">Updated '+updatedStr+'</div><div class="badge">'+countStr+'</div></div></div>',
-    '<div class="booking-list"><div class="booking-list-inner" id="L">'+listHtml+'</div></div>',
-    '</div></div></div>',
-    '<script>',
-    'function updateClock(){var n=new Date();document.getElementById("clock").textContent=n.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",hour12:true});document.getElementById("dateStr").textContent=n.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"});}',
-    'setInterval(updateClock,1000);updateClock();',
-    'var sp=0,le=document.querySelector(".booking-list"),ie=document.getElementById("L"),ni=ie.querySelector(".is-now");',
-    'if(ni){sp=Math.max(0,ni.offsetTop-20);le.scrollTop=sp;}',
-    'setInterval(function(){var mx=ie.scrollHeight-le.clientHeight;if(mx<=0)return;sp+=90;if(sp>=mx)sp=0;le.scrollTo({top:sp,behavior:"smooth"});},5000);',
-    '<\/script></body></html>'
-  ];
+  const html = '<!DOCTYPE html>\n'
+    +'<html><head>\n'
+    +'<meta charset="UTF-8">\n'
+    +'<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+    +'<title>Gemco Venue Bookings</title>\n'
+    +'<style>\n'
+    +'body{margin:0;padding:0;background:#0d0d0f;color:#e8e4dc;font-family:Arial,sans-serif;overflow:hidden;}\n'
+    +'#wrap{width:100%;height:100vh;overflow:hidden;}\n'
+    +'#hdr{padding:16px 24px 12px;border-bottom:1px solid #222;overflow:hidden;}\n'
+    +'#hdr-left{float:left;}\n'
+    +'#hdr-right{float:right;text-align:right;}\n'
+    +'#vname{font-size:36px;font-weight:bold;color:#e8e4dc;line-height:1;}\n'
+    +'#vsub{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#c9a84c;margin-top:4px;}\n'
+    +'#clock{font-size:36px;font-weight:300;color:#e8e4dc;line-height:1;letter-spacing:2px;}\n'
+    +'#dateline{font-size:12px;color:#6b6760;margin-top:4px;}\n'
+    +'#body{overflow:hidden;padding:16px 24px;}\n'
+    +'#cal-col{float:left;width:44%;}\n'
+    +'#list-col{float:right;width:53%;height:88vh;overflow:hidden;position:relative;}\n'
+    +'#list-fade{position:absolute;bottom:0;left:0;right:0;height:60px;background:-webkit-linear-gradient(top,transparent,#0d0d0f);pointer-events:none;}\n'
+    +'#month-lbl{font-size:22px;color:#e8e4dc;text-align:center;margin-bottom:10px;}\n'
+    +'.cal-tbl{width:100%;border-collapse:collapse;}\n'
+    +'.cal-tbl th{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6b6760;text-align:center;padding:3px 0;}\n'
+    +'.dc{background:#151518;border:1px solid #1e1e22;border-radius:6px;padding:4px 5px;vertical-align:top;height:60px;width:14%;overflow:hidden;}\n'
+    +'.om{background:transparent;border-color:transparent;opacity:0.3;}\n'
+    +'.td{border-color:#c9a84c;background:#161400;}\n'
+    +'.hb{border-color:#2a2a30;}\n'
+    +'.dn{font-size:11px;color:#6b6760;display:block;line-height:1;}\n'
+    +'.tdn{color:#c9a84c;}\n'
+    +'.dots{margin-top:2px;}\n'
+    +'.dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:1px;}\n'
+    +'.chip{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 3px;border-radius:2px;margin-top:2px;}\n'
+    +'.more{font-size:8px;color:#6b6760;margin-top:1px;}\n'
+    +'#list-hdr{overflow:hidden;margin-bottom:10px;}\n'
+    +'#list-title{font-size:22px;color:#e8e4dc;float:left;}\n'
+    +'#list-meta{float:right;text-align:right;}\n'
+    +'.badge{font-size:10px;color:#c9a84c;border:1px solid #7a6230;padding:2px 8px;border-radius:10px;background:#110e00;}\n'
+    +'.upd{font-size:9px;color:#6b6760;display:block;margin-bottom:3px;}\n'
+    +'#list-inner{overflow:hidden;}\n'
+    +'.divider{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#7a6230;padding:6px 0 3px;}\n'
+    +'.bi{width:100%;border-collapse:collapse;border-radius:8px;margin-bottom:6px;}\n'
+    +'.bi td{padding:7px 10px;vertical-align:middle;}\n'
+    +'.bt{font-size:10px;color:#6b6760;width:80px;white-space:nowrap;line-height:1.6;}\n'
+    +'.bt strong{display:block;font-size:12px;color:#9e9891;}\n'
+    +'.btitle{font-size:13px;font-weight:bold;color:#e8e4dc;}\n'
+    +'.bspace{text-align:right;white-space:nowrap;}\n'
+    +'.stag{font-size:9px;padding:2px 7px;border-radius:3px;}\n'
+    +'.now{font-size:8px;color:#c9a84c;background:#1a1400;padding:1px 5px;border-radius:2px;margin-left:6px;text-transform:uppercase;}\n'
+    +'.empty{font-size:12px;color:#6b6760;text-align:center;padding:30px;}\n'
+    +'</style>\n'
+    +'</head><body>\n'
+    +'<div id="wrap">\n'
+    +'<div id="hdr"><div id="hdr-left"><div id="vname">Gemco</div><div id="vsub">Venue Bookings</div></div>'
+    +'<div id="hdr-right"><div id="clock" id="clock">--:--</div><div id="dateline" id="dateline"></div></div>'
+    +'<div style="clear:both"></div></div>\n'
+    +'<div id="body">\n'
+    +'<div id="cal-col">\n'
+    +'<div id="month-lbl">'+monthLabel+'</div>\n'
+    +'<table class="cal-tbl"><thead><tr>'
+    +'<th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>'
+    +'</tr></thead><tbody>'+calRows+'</tbody></table>\n'
+    +'</div>\n'
+    +'<div id="list-col">\n'
+    +'<div id="list-hdr">'
+    +'<div id="list-title">Upcoming Bookings</div>'
+    +'<div id="list-meta"><span class="upd">Updated '+updatedStr+'</span><span class="badge">'+countStr+'</span></div>'
+    +'<div style="clear:both"></div></div>\n'
+    +'<div id="list-inner">'+listHtml+'</div>\n'
+    +'<div id="list-fade"></div>\n'
+    +'</div>\n'
+    +'<div style="clear:both"></div>\n'
+    +'</div>\n'
+    +'</div>\n'
+    +'<script>\n'
+    +'function updateClock(){\n'
+    +'  var n=new Date();\n'
+    +'  var h=n.getHours(),m=n.getMinutes(),ampm=h>=12?"pm":"am";\n'
+    +'  h=h%12;if(h===0)h=12;\n'
+    +'  document.getElementById("clock").innerHTML=h+":"+(m<10?"0"+m:m)+" "+ampm;\n'
+    +'  var days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];\n'
+    +'  var months=["January","February","March","April","May","June","July","August","September","October","November","December"];\n'
+    +'  document.getElementById("dateline").innerHTML=days[n.getDay()]+" "+n.getDate()+" "+months[n.getMonth()]+" "+n.getFullYear();\n'
+    +'}\n'
+    +'setInterval(updateClock,1000);\n'
+    +'updateClock();\n'
+    +'var sp=0;\n'
+    +'var li=document.getElementById("list-inner");\n'
+    +'var lc=document.getElementById("list-col");\n'
+    +'setInterval(function(){\n'
+    +'  var mx=li.scrollHeight-lc.clientHeight+80;\n'
+    +'  if(mx<=0)return;\n'
+    +'  sp+=80;\n'
+    +'  if(sp>=mx)sp=0;\n'
+    +'  li.style.marginTop="-"+sp+"px";\n'
+    +'},4000);\n'
+    +'</script>\n'
+    +'</body></html>';
 
-  fs.writeFileSync('index.html', lines.join('\n'));
+  fs.writeFileSync('index.html', html);
   console.log('Written index.html with ' + upcoming.length + ' upcoming bookings');
 }
 
