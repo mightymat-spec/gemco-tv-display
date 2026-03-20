@@ -409,7 +409,7 @@ updateClock();
 // ── FETCH bookings.json (same origin — no CORS) ──
 async function fetchBookings() {
   try {
-    const resp = await fetch('./data/bookings.json?t=' + Date.now());
+    const resp = await fetch('https://raw.githubusercontent.com/mightymat-spec/gemco-tv-display/main/data/bookings.json?t=' + Date.now());
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const json = await resp.json();
 
