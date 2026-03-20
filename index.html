@@ -1,612 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemco Venue — Bookings</title>
+<title>Gemco Venue Bookings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0d0f;
-    --surface: #151518;
-    --surface2: #1c1c21;
-    --border: rgba(255,255,255,0.07);
-    --gold: #c9a84c;
-    --gold-dim: #7a6230;
-    --text: #e8e4dc;
-    --text-muted: #6b6760;
-    --text-dim: #9e9891;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html, body {
-    width: 100%; height: 100vh;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 1000;
-  }
-
-  .wrapper {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: 100vh;
-    padding: 28px 36px 24px;
-    gap: 24px;
-  }
-
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 18px;
-  }
-
-  .logo-block .venue-name {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2rem, 3.5vw, 3rem);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .logo-block .venue-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-top: 6px;
-  }
-
-  .clock-block { text-align: right; }
-
-  .clock-block .time {
-    font-family: 'DM Mono', monospace;
-    font-size: clamp(2rem, 3.5vw, 3rem);
-    font-weight: 300;
-    letter-spacing: 0.05em;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .clock-block .date {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 5px;
-    letter-spacing: 0.08em;
-  }
-
-  .content {
-    display: grid;
-    grid-template-columns: 1fr 1.15fr;
-    gap: 24px;
-    min-height: 0;
-  }
-
-  /* ── CALENDAR ── */
-  .calendar-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .month-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .month-label {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(1.2rem, 2vw, 1.8rem);
-    font-weight: 400;
-    color: var(--text);
-    letter-spacing: 0.04em;
-  }
-
-  .nav-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: 1.2rem;
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .nav-btn:hover { border-color: var(--gold); color: var(--gold); }
-
-  .cal-grid {
-    flex: 1;
-    display: grid;
-    grid-template-rows: auto 1fr;
-  }
-
-  .day-headers {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 6px;
-  }
-
-  .day-hdr {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 4px 0;
-  }
-
-  .days-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    grid-auto-rows: 1fr;
-    gap: 4px;
-  }
-
-  .day-cell {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 7px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    cursor: default;
-    transition: border-color 0.15s;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .day-cell.other-month { background: transparent; border-color: transparent; opacity: 0.3; }
-  .day-cell.today { border-color: var(--gold); background: rgba(201,168,76,0.07); }
-  .day-cell.has-bookings { border-color: rgba(255,255,255,0.13); }
-
-  .day-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    line-height: 1;
-  }
-  .day-cell.today .day-num { color: var(--gold); }
-
-  .day-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
-
-  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-  .booking-chip {
-    font-size: 0.55rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 1px 4px;
-    border-radius: 3px;
-    line-height: 1.4;
-    opacity: 0.9;
-  }
-
-  /* ── LIST ── */
-  .list-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    min-height: 0;
-  }
-
-  .list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .list-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(1.2rem, 2vw, 1.8rem);
-    font-weight: 400;
-    color: var(--text);
-  }
-
-  .badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    color: var(--gold);
-    background: rgba(201,168,76,0.1);
-    border: 1px solid var(--gold-dim);
-    padding: 3px 9px;
-    border-radius: 20px;
-  }
-
-  .last-updated {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-  }
-
-  .booking-list {
-    flex: 1;
-    overflow-y: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  .booking-list::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 60px;
-    background: linear-gradient(to bottom, transparent, var(--bg));
-    pointer-events: none;
-  }
-
-  .booking-list-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .booking-item {
-    display: grid;
-    grid-template-columns: 90px 1fr auto;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    border-left: 3px solid transparent;
-    flex-shrink: 0;
-  }
-
-  .booking-item.is-now {
-    background: rgba(201,168,76,0.06);
-    border-color: rgba(201,168,76,0.25);
-    border-left-color: var(--gold);
-  }
-
-  .booking-item.is-past { opacity: 0.4; }
-
-  .b-date {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-  }
-  .b-date strong { display: block; font-size: 0.8rem; color: var(--text-dim); font-weight: 400; }
-
-  .b-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .b-space { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-
-  .space-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
-    padding: 3px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-  }
-
-  .now-pill {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--gold);
-    background: rgba(201,168,76,0.15);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
-
-  .empty-msg {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-align: center;
-    padding: 40px 20px;
-    letter-spacing: 0.1em;
-  }
-
-  .date-divider {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold-dim);
-    padding: 6px 0 2px;
-    flex-shrink: 0;
-  }
-</style>
-</head>
-<body>
-
+:root{--bg:#0d0d0f;--surface:#151518;--border:rgba(255,255,255,0.07);--gold:#c9a84c;--gold-dim:#7a6230;--text:#e8e4dc;--text-muted:#6b6760;--text-dim:#9e9891;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.wrapper{display:grid;grid-template-rows:auto 1fr;height:100vh;padding:28px 36px 24px;gap:24px;}
+header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:18px;}
+.venue-name{font-family:'Playfair Display',serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:var(--text);line-height:1;}
+.venue-sub{font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-top:6px;}
+.clock-block{text-align:right;}
+.time{font-family:'DM Mono',monospace;font-size:clamp(2rem,3.5vw,3rem);font-weight:300;letter-spacing:0.05em;color:var(--text);line-height:1;}
+.date{font-size:0.8rem;color:var(--text-muted);margin-top:5px;letter-spacing:0.08em;}
+.content{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;min-height:0;}
+.calendar-panel{display:flex;flex-direction:column;gap:16px;}
+.month-label{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,2vw,1.8rem);font-weight:400;color:var(--text);text-align:center;}
+.cal-grid{flex:1;display:grid;grid-template-rows:auto 1fr;}
+.day-headers{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}
+.day-hdr{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);text-align:center;padding:4px 0;}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:4px;}
+.day-cell{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 7px;display:flex;flex-direction:column;gap:3px;min-height:0;overflow:hidden;}
+.day-cell.other-month{background:transparent;border-color:transparent;opacity:0.3;}
+.day-cell.today{border-color:var(--gold);background:rgba(201,168,76,0.07);}
+.day-cell.has-bookings{border-color:rgba(255,255,255,0.13);}
+.day-num{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-muted);line-height:1;}
+.day-cell.today .day-num{color:var(--gold);}
+.day-dots{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.booking-chip{font-size:0.55rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 4px;border-radius:3px;line-height:1.4;opacity:0.9;}
+.list-panel{display:flex;flex-direction:column;gap:14px;min-height:0;}
+.list-header{display:flex;align-items:center;justify-content:space-between;}
+.list-title{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,2vw,1.8rem);font-weight:400;color:var(--text);}
+.badge{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--gold);background:rgba(201,168,76,0.1);border:1px solid var(--gold-dim);padding:3px 9px;border-radius:20px;}
+.last-updated{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text-muted);}
+.booking-list{flex:1;overflow-y:hidden;display:flex;flex-direction:column;position:relative;}
+.booking-list::after{content:'';position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none;}
+.booking-list-inner{display:flex;flex-direction:column;gap:8px;}
+.booking-item{display:grid;grid-template-columns:90px 1fr auto;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;border-left:3px solid transparent;flex-shrink:0;}
+.booking-item.is-now{background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.25);border-left-color:var(--gold);}
+.b-date{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-muted);line-height:1.5;}
+.b-date strong{display:block;font-size:0.8rem;color:var(--text-dim);font-weight:400;}
+.b-title{font-size:0.9rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.b-space{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.space-tag{font-family:'DM Mono',monospace;font-size:0.6rem;padding:3px 8px;border-radius:4px;white-space:nowrap;}
+.now-pill{font-family:'DM Mono',monospace;font-size:0.55rem;text-transform:uppercase;color:var(--gold);background:rgba(201,168,76,0.15);padding:2px 6px;border-radius:3px;}
+.empty-msg{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-muted);text-align:center;padding:40px 20px;}
+.date-divider{font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-dim);padding:6px 0 2px;flex-shrink:0;}
+</style></head><body>
 <div class="wrapper">
-  <header>
-    <div class="logo-block">
-      <div class="venue-name">Gemco</div>
-      <div class="venue-sub">Venue Bookings</div>
-    </div>
-    <div class="clock-block">
-      <div class="time" id="clock">--:--</div>
-      <div class="date" id="dateStr"></div>
-    </div>
-  </header>
-
-  <div class="content">
-    <div class="calendar-panel">
-      <div class="month-nav">
-        <button class="nav-btn" id="prevMonth">‹</button>
-        <div class="month-label" id="monthLabel"></div>
-        <button class="nav-btn" id="nextMonth">›</button>
-      </div>
-      <div class="cal-grid">
-        <div class="day-headers">
-          <div class="day-hdr">Sun</div><div class="day-hdr">Mon</div><div class="day-hdr">Tue</div>
-          <div class="day-hdr">Wed</div><div class="day-hdr">Thu</div><div class="day-hdr">Fri</div>
-          <div class="day-hdr">Sat</div>
-        </div>
-        <div class="days-grid" id="daysGrid"></div>
-      </div>
-    </div>
-
-    <div class="list-panel">
-      <div class="list-header">
-        <div class="list-title">Upcoming Bookings</div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div class="last-updated" id="lastUpdated"></div>
-          <div class="badge" id="countBadge">— events</div>
-        </div>
-      </div>
-      <div class="booking-list" id="bookingList">
-        <div class="booking-list-inner" id="bookingListInner">
-          <div class="empty-msg">Loading bookings…</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<header><div class="logo-block"><div class="venue-name">Gemco</div><div class="venue-sub">Venue Bookings</div></div>
+<div class="clock-block"><div class="time" id="clock">--:--</div><div class="date" id="dateStr"></div></div></header>
+<div class="content">
+<div class="calendar-panel">
+<div class="month-label">March 2026</div>
+<div class="cal-grid">
+<div class="day-headers"><div class="day-hdr">Sun</div><div class="day-hdr">Mon</div><div class="day-hdr">Tue</div><div class="day-hdr">Wed</div><div class="day-hdr">Thu</div><div class="day-hdr">Fri</div><div class="day-hdr">Sat</div></div>
+<div class="days-grid"><div class="day-cell has-bookings"><div class="day-num">1</div><div class="day-dots"><div class="dot" style="background:#c94c4c"></div></div><div class="booking-chip" style="background:#c94c4c22;color:#c94c4c">Gemco Board meeting</div></div><div class="day-cell has-bookings"><div class="day-num">2</div><div class="day-dots"><div class="dot" style="background:#c94c4c"></div><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#c94c4c22;color:#c94c4c">Take ten read</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+1 more</div></div><div class="day-cell"><div class="day-num">3</div></div><div class="day-cell has-bookings"><div class="day-num">4</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Gemco Youth class</div></div><div class="day-cell has-bookings"><div class="day-num">5</div><div class="day-dots"><div class="dot" style="background:#c9a84c"></div></div><div class="booking-chip" style="background:#c9a84c22;color:#c9a84c">Take Ten rehearsal</div></div><div class="day-cell"><div class="day-num">6</div></div><div class="day-cell has-bookings"><div class="day-num">7</div><div class="day-dots"><div class="dot" style="background:#c94c4c"></div><div class="dot" style="background:#4caa6e"></div><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#c94c4c22;color:#c94c4c">GEMCO Open Stage</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+2 more</div></div><div class="day-cell"><div class="day-num">8</div></div><div class="day-cell has-bookings"><div class="day-num">9</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="day-cell"><div class="day-num">10</div></div><div class="day-cell has-bookings"><div class="day-num">11</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Gemco Youth class</div></div><div class="day-cell"><div class="day-num">12</div></div><div class="day-cell has-bookings"><div class="day-num">13</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div><div class="dot" style="background:#c94c4c"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Ecsd</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+1 more</div></div><div class="day-cell"><div class="day-num">14</div></div><div class="day-cell"><div class="day-num">15</div></div><div class="day-cell has-bookings"><div class="day-num">16</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Junior gemco classes</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+1 more</div></div><div class="day-cell"><div class="day-num">17</div></div><div class="day-cell has-bookings"><div class="day-num">18</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Gemco Youth class</div></div><div class="day-cell has-bookings"><div class="day-num">19</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Take ten meet and greet</div></div><div class="day-cell today"><div class="day-num">20</div></div><div class="day-cell"><div class="day-num">21</div></div><div class="day-cell"><div class="day-num">22</div></div><div class="day-cell has-bookings"><div class="day-num">23</div><div class="day-dots"><div class="dot" style="background:#c9a84c"></div><div class="dot" style="background:#c94c4c"></div><div class="dot" style="background:#4c7ec9"></div><div class="dot" style="background:#4caa6e"></div><div class="dot" style="background:#4cb8c9"></div><div class="dot" style="background:#c97a4c"></div></div><div class="booking-chip" style="background:#c9a84c22;color:#c9a84c">U3A Cinema Classics</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+9 more</div></div><div class="day-cell"><div class="day-num">24</div></div><div class="day-cell has-bookings"><div class="day-num">25</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Gemco Youth class</div></div><div class="day-cell has-bookings"><div class="day-num">26</div><div class="day-dots"><div class="dot" style="background:#c9a84c"></div></div><div class="booking-chip" style="background:#c9a84c22;color:#c9a84c">Rehearsal Use Onlyas Directed</div></div><div class="day-cell"><div class="day-num">27</div></div><div class="day-cell"><div class="day-num">28</div></div><div class="day-cell has-bookings"><div class="day-num">29</div><div class="day-dots"><div class="dot" style="background:#c94c4c"></div></div><div class="booking-chip" style="background:#c94c4c22;color:#c94c4c">BOARD MEETING</div></div><div class="day-cell has-bookings"><div class="day-num">30</div><div class="day-dots"><div class="dot" style="background:#4c7ec9"></div></div><div class="booking-chip" style="background:#4c7ec922;color:#4c7ec9">Junior gemco classes</div><div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+1 more</div></div><div class="day-cell"><div class="day-num">31</div></div><div class="day-cell other-month"><div class="day-num">1</div></div><div class="day-cell other-month"><div class="day-num">2</div></div><div class="day-cell other-month"><div class="day-num">3</div></div><div class="day-cell other-month"><div class="day-num">4</div></div></div>
+</div></div>
+<div class="list-panel">
+<div class="list-header"><div class="list-title">Upcoming Bookings</div>
+<div style="display:flex;align-items:center;gap:12px;"><div class="last-updated">Updated 01:36 am</div><div class="badge">139 events</div></div></div>
+<div class="booking-list"><div class="booking-list-inner" id="L"><div class="date-divider">Mon, 23 Mar</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#c97a4c"><div class="b-date"><strong>06:00 pm</strong>07:00 pm</div><div><div class="b-title">GEMCO SGM constitution</div></div><div class="b-space"><span class="space-tag" style="background:#c97a4c22;color:#c97a4c">Car Park</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Wed, 25 Mar</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Thu, 26 Mar</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>08:30 pm</div><div><div class="b-title">Rehearsal Use Onlyas Directed</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Sun, 29 Mar</div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>05:30 pm</strong>07:30 pm</div><div><div class="b-title">BOARD MEETING</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Mon, 30 Mar</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Wed, 1 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Thu, 2 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>08:30 pm</div><div><div class="b-title">Rehearsal Use Onlyas Directed</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Sat, 4 Apr</div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Sun, 5 Apr</div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>05:30 pm</strong>07:30 pm</div><div><div class="b-title">Gemco Board meeting</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Mon, 6 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Wed, 8 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Thu, 9 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>08:30 pm</div><div><div class="b-title">Rehearsal Use Onlyas Directed</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Sat, 11 Apr</div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>11:00 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>11:00 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>11:00 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>05:00 pm</strong>11:00 pm</div><div><div class="b-title">Benoit album launch - Kennedy Street</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>05:00 pm</strong>11:00 pm</div><div><div class="b-title">Benoit album launch - Kennedy Street</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Sun, 12 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">FunFest</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#c97a4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">FunFest</div></div><div class="b-space"><span class="space-tag" style="background:#c97a4c22;color:#c97a4c">Car Park</span></div></div><div class="date-divider">Mon, 13 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 14 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="date-divider">Wed, 15 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Thu, 16 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="date-divider">Fri, 17 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="date-divider">Sat, 18 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>07:30 am</strong>11:30 pm</div><div><div class="b-title">PAVED Festival</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="date-divider">Mon, 20 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:30 pm</strong>09:30 pm</div><div><div class="b-title">Take Ten rehearsal block out times</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 21 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:30 pm</strong>09:30 pm</div><div><div class="b-title">Take Ten rehearsal block out times</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 22 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:30 pm</strong>09:30 pm</div><div><div class="b-title">Take Ten rehearsal block out times</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Thu, 23 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:30 pm</strong>09:30 pm</div><div><div class="b-title">Take Ten rehearsal block out times</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Fri, 24 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:30 pm</strong>09:30 pm</div><div><div class="b-title">Take Ten rehearsal block out times</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Sun, 26 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>02:00 pm</strong>04:00 pm</div><div><div class="b-title">Take 10 bump-in</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>02:00 pm</strong>04:00 pm</div><div><div class="b-title">Take 10 bump-in</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>02:00 pm</strong>04:00 pm</div><div><div class="b-title">Take 10 bump-in</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Mon, 27 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten Tech rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten Tech rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 28 Apr</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten Tech rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten Tech rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Wed, 29 Apr</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten dress rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>10:00 pm</div><div><div class="b-title">Take Ten dress rehearsal</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Fri, 1 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>10:30 pm</div><div><div class="b-title">Take Ten minutes play performance</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>10:30 pm</div><div><div class="b-title">Take Ten minutes play performance</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Sat, 2 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>06:00 pm</strong>10:30 pm</div><div><div class="b-title">Take Ten minutes play performance</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:00 pm</strong>10:30 pm</div><div><div class="b-title">Take Ten minutes play performance</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Sun, 3 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>12:00 pm</strong>05:30 pm</div><div><div class="b-title">Take Ten performance</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>12:00 pm</strong>05:30 pm</div><div><div class="b-title">Take Ten performance</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>05:30 pm</strong>07:30 pm</div><div><div class="b-title">Gemco Board meeting</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Mon, 4 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 5 May</div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind Auditions</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind Auditions</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Wed, 6 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Sat, 9 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>11:00 am</strong>05:00 pm</div><div><div class="b-title">Facevblind auditions</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Mon, 11 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Wed, 13 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Sat, 16 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4cb8c9"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#4cb8c922;color:#4cb8c9">Carriage</span></div></div><div class="booking-item" style="border-left-color:#c97a4c"><div class="b-date"><strong>04:00 pm</strong>05:00 pm</div><div><div class="b-title">[Gemco AGM party</div></div><div class="b-space"><span class="space-tag" style="background:#c97a4c22;color:#c97a4c">Car Park</span></div></div><div class="date-divider">Mon, 18 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 19 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 20 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Fri, 22 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Mon, 25 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>01:00 pm</strong>04:30 pm</div><div><div class="b-title">U3A Cinema Classics</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 26 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 27 May</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Fri, 29 May</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Mon, 1 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 2 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 3 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Fri, 5 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Sat, 6 June</div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="booking-item" style="border-left-color:#4caa6e"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#4caa6e22;color:#4caa6e">Kitchen</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>06:30 pm</strong>10:30 pm</div><div><div class="b-title">GEMCO Open Stage</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Sun, 7 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>12:00 pm</strong>04:00 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="booking-item" style="border-left-color:#c94c4c"><div class="b-date"><strong>05:30 pm</strong>07:30 pm</div><div><div class="b-title">Gemco Board meeting</div></div><div class="b-space"><span class="space-tag" style="background:#c94c4c22;color:#c94c4c">Bar &amp; Foyer</span></div></div><div class="date-divider">Mon, 8 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 9 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 10 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Fri, 12 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Mon, 15 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>04:30 pm</strong>05:45 pm</div><div><div class="b-title">Junior gemco classes</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>07:00 pm</strong>09:00 pm</div><div><div class="b-title">&quot;Off the Rails&quot; PB murder rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Tue, 16 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div><div class="date-divider">Wed, 17 June</div><div class="booking-item" style="border-left-color:#4c7ec9"><div class="b-date"><strong>05:00 pm</strong>09:00 pm</div><div><div class="b-title">Gemco Youth class</div></div><div class="b-space"><span class="space-tag" style="background:#4c7ec922;color:#4c7ec9">Hall</span></div></div><div class="date-divider">Fri, 19 June</div><div class="booking-item" style="border-left-color:#c9a84c"><div class="b-date"><strong>07:00 pm</strong>09:30 pm</div><div><div class="b-title">Face Blind rehearsals</div></div><div class="b-space"><span class="space-tag" style="background:#c9a84c22;color:#c9a84c">Theatre</span></div></div></div></div>
+</div></div></div>
 <script>
-let allBookings = [];
-let viewMonth = new Date();
-viewMonth.setDate(1);
-
-// ── CLOCK ──
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent =
-    now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-  document.getElementById('dateStr').textContent =
-    now.toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ── FETCH bookings.json (same origin — no CORS) ──
-async function fetchBookings() {
-  try {
-    const resp = await fetch('https://raw.githubusercontent.com/mightymat-spec/gemco-tv-display/main/data/bookings.json?t=' + Date.now());
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const json = await resp.json();
-
-    allBookings = (json.bookings || []).map(b => ({
-      ...b,
-      start: new Date(b.start),
-      end:   new Date(b.end)
-    }));
-
-    const updated = new Date(json.updated);
-    document.getElementById('lastUpdated').textContent =
-      'Updated ' + updated.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-
-    renderAll();
-  } catch(e) {
-    console.error('Failed to load bookings.json:', e);
-    document.getElementById('lastUpdated').textContent = 'Failed to load — retrying…';
-  }
-}
-
-// ── CALENDAR ──
-function renderCalendar() {
-  const year  = viewMonth.getFullYear();
-  const month = viewMonth.getMonth();
-
-  document.getElementById('monthLabel').textContent =
-    viewMonth.toLocaleDateString('en-AU', { month:'long', year:'numeric' });
-
-  const firstDay    = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const daysInPrev  = new Date(year, month, 0).getDate();
-
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  const bookedDays = {};
-  for (const bk of allBookings) {
-    if (bk.start.getFullYear() === year && bk.start.getMonth() === month) {
-      const key = bk.start.getDate();
-      if (!bookedDays[key]) bookedDays[key] = [];
-      bookedDays[key].push(bk);
-    }
-  }
-
-  const grid = document.getElementById('daysGrid');
-  grid.innerHTML = '';
-
-  for (let i = firstDay - 1; i >= 0; i--) {
-    const cell = document.createElement('div');
-    cell.className = 'day-cell other-month';
-    cell.innerHTML = `<div class="day-num">${daysInPrev - i}</div>`;
-    grid.appendChild(cell);
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const cellDate = new Date(year, month, d);
-    const isToday  = cellDate.getTime() === today.getTime();
-    const bks      = bookedDays[d] || [];
-    const cell     = document.createElement('div');
-
-    cell.className = 'day-cell' + (isToday ? ' today' : '') + (bks.length ? ' has-bookings' : '');
-    cell.dataset.date = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-
-    let inner = `<div class="day-num">${d}</div>`;
-    if (bks.length) {
-      inner += '<div class="day-dots">';
-      const seen = new Set();
-      bks.forEach(bk => {
-        if (!seen.has(bk.space)) {
-          seen.add(bk.space);
-          inner += `<div class="dot" style="background:${bk.color}"></div>`;
-        }
-      });
-      inner += '</div>';
-      inner += `<div class="booking-chip" style="background:${bks[0].color}22;color:${bks[0].color}">${bks[0].title}</div>`;
-      if (bks.length > 1) inner += `<div style="font-size:0.5rem;color:var(--text-muted);margin-top:1px">+${bks.length-1} more</div>`;
-    }
-
-    cell.innerHTML = inner;
-    cell.addEventListener('click', () => scrollListToDate(cell.dataset.date));
-    grid.appendChild(cell);
-  }
-
-  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-  let nextDay = 1;
-  for (let i = firstDay + daysInMonth; i < totalCells; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'day-cell other-month';
-    cell.innerHTML = `<div class="day-num">${nextDay++}</div>`;
-    grid.appendChild(cell);
-  }
-}
-
-// ── LIST ──
-function renderList() {
-  const listEl = document.getElementById('bookingListInner');
-  const now    = new Date();
-  const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
-
-  const upcoming = allBookings.filter(bk => bk.end > startOfToday);
-
-  document.getElementById('countBadge').textContent =
-    upcoming.length + (upcoming.length === 1 ? ' event' : ' events');
-
-  if (!upcoming.length) {
-    listEl.innerHTML = '<div class="empty-msg">No upcoming bookings</div>';
-    return;
-  }
-
-  const fmtDate = d => d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' });
-  const fmtTime = d => d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-
-  let html = '';
-  let lastDate = '';
-
-  for (const bk of upcoming) {
-    const isNow  = bk.start <= now && bk.end > now;
-    const isPast = bk.end <= now;
-    const dateStr = fmtDate(bk.start);
-
-    if (dateStr !== lastDate) {
-      lastDate = dateStr;
-      const isToday = fmtDate(now) === dateStr;
-      html += `<div class="date-divider">${isToday ? '▸ Today — ' : ''}${dateStr}</div>`;
-    }
-
-    const cls = isNow ? 'booking-item is-now' : isPast ? 'booking-item is-past' : 'booking-item';
-    html += `
-      <div class="${cls}" style="border-left-color:${bk.color}" data-date="${bk.start.toISOString().slice(0,10)}">
-        <div class="b-date">
-          <strong>${fmtTime(bk.start)}</strong>
-          ${fmtTime(bk.end)}
-        </div>
-        <div><div class="b-title">${bk.title}</div></div>
-        <div class="b-space">
-          <span class="space-tag" style="background:${bk.color}22;color:${bk.color}">${bk.space}</span>
-          ${isNow ? '<span class="now-pill">Now</span>' : ''}
-        </div>
-      </div>`;
-  }
-
-  listEl.innerHTML = html;
-  autoScroll();
-}
-
-// ── AUTO-SCROLL ──
-let scrollTimer = null;
-let scrollPos   = 0;
-
-function autoScroll() {
-  clearInterval(scrollTimer);
-  const listEl  = document.getElementById('bookingList');
-  const innerEl = document.getElementById('bookingListInner');
-  scrollPos = 0;
-
-  const nowItem = innerEl.querySelector('.is-now');
-  if (nowItem) {
-    scrollPos = Math.max(0, nowItem.offsetTop - 20);
-    listEl.scrollTop = scrollPos;
-  }
-
-  scrollTimer = setInterval(() => {
-    const maxScroll = innerEl.scrollHeight - listEl.clientHeight;
-    if (maxScroll <= 0) return;
-    scrollPos += 90;
-    if (scrollPos >= maxScroll) scrollPos = 0;
-    listEl.scrollTo({ top: scrollPos, behavior: 'smooth' });
-  }, 5000);
-}
-
-function scrollListToDate(dateStr) {
-  const listEl = document.getElementById('bookingList');
-  const item   = document.querySelector(`[data-date="${dateStr}"]`);
-  if (item) {
-    clearInterval(scrollTimer);
-    listEl.scrollTo({ top: item.offsetTop - 20, behavior: 'smooth' });
-    setTimeout(autoScroll, 30000);
-  }
-}
-
-function renderAll() { renderCalendar(); renderList(); }
-
-document.getElementById('prevMonth').addEventListener('click', () => {
-  viewMonth.setMonth(viewMonth.getMonth() - 1); renderCalendar();
-});
-document.getElementById('nextMonth').addEventListener('click', () => {
-  viewMonth.setMonth(viewMonth.getMonth() + 1); renderCalendar();
-});
-
-// Load bookings, then refresh every 5 minutes
-fetchBookings();
-setInterval(fetchBookings, 5 * 60 * 1000);
-setInterval(renderList, 60 * 1000);
-
-document.addEventListener('click', () => {
-  if (!document.fullscreenElement)
-    document.documentElement.requestFullscreen().catch(() => {});
-});
-</script>
-</body>
-</html>
+function updateClock(){var n=new Date();document.getElementById("clock").textContent=n.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",hour12:true});document.getElementById("dateStr").textContent=n.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"});}
+setInterval(updateClock,1000);updateClock();
+var sp=0,le=document.querySelector(".booking-list"),ie=document.getElementById("L"),ni=ie.querySelector(".is-now");
+if(ni){sp=Math.max(0,ni.offsetTop-20);le.scrollTop=sp;}
+setInterval(function(){var mx=ie.scrollHeight-le.clientHeight;if(mx<=0)return;sp+=90;if(sp>=mx)sp=0;le.scrollTo({top:sp,behavior:"smooth"});},5000);
+</script></body></html>
