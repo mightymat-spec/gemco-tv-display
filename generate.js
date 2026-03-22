@@ -143,6 +143,8 @@ async function main() {
   var html = '<!DOCTYPE html>\n<html><head>\n'
     +'<meta charset="UTF-8">\n'
     +'<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">\n'
+    +'<meta name="apple-mobile-web-app-capable" content="yes">\n'
+    +'<meta name="apple-mobile-web-app-status-bar-style" content="black">\n'
     +'<title>Gemco Venue Bookings</title>\n'
     +'<style>\n'
     +'html,body{margin:0;padding:0;background:#09090b;color:#f0ece4;font-family:Arial,Helvetica,sans-serif;height:100%;overflow:hidden;}\n'
