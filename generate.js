@@ -2,12 +2,12 @@ const https = require('https');
 const fs = require('fs');
 
 const SPACES = [
-  { name: 'Theatre',     color: '#c9a84c', url: 'https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644' },
-  { name: 'Bar & Foyer', color: '#c94c4c', url: 'https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645' },
-  { name: 'Kitchen',     color: '#4caa6e', url: 'https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646' },
-  { name: 'Hall',        color: '#4c7ec9', url: 'https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647' },
-  { name: 'Carriage',    color: '#4cb8c9', url: 'https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648' },
-  { name: 'Car Park',    color: '#c97a4c', url: 'https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649' }
+  { name: 'Theatre',     color: '#f0b429', url: 'https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644' },
+  { name: 'Bar & Foyer', color: '#f05454', url: 'https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645' },
+  { name: 'Kitchen',     color: '#3dd68c', url: 'https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646' },
+  { name: 'Hall',        color: '#5b9cf6', url: 'https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647' },
+  { name: 'Carriage',    color: '#38d9f5', url: 'https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648' },
+  { name: 'Car Park',    color: '#f5a623', url: 'https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649' }
 ];
 
 function fetchUrl(url) {
@@ -63,12 +63,17 @@ function parseIcal(text, spaceName, color) {
   }).filter(Boolean);
 }
 
-function fmtDay(d) {
-  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function fmtDayKey(d) { return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
+function fmtDayLabel(d) { return DAYS[d.getDay()]+', '+d.getDate()+' '+MONTHS_SHORT[d.getMonth()]; }
+function fmtTime(d) {
+  var h=d.getHours(), m=d.getMinutes(), ampm=h>=12?'pm':'am';
+  h=h%12; if(h===0)h=12;
+  return h+':'+(m<10?'0'+m:m)+' '+ampm;
 }
-function fmtTime(d) { return d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',hour12:true}); }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function main() {
@@ -91,16 +96,20 @@ async function main() {
   const startOfToday = new Date(now); startOfToday.setHours(0,0,0,0);
   const upcoming = allBookings.filter(bk => bk.end > startOfToday);
 
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1);
+  const todayKey    = fmtDayKey(now);
+  const tomorrowKey = fmtDayKey(tomorrow);
+
   // Group by date
   var groups = [];
-  var lastDate = '';
+  var lastKey = '';
   var currentGroup = null;
   for (var i = 0; i < upcoming.length; i++) {
     var bk = upcoming[i];
-    var dateKey = fmtDay(bk.start);
-    if (dateKey !== lastDate) {
-      lastDate = dateKey;
-      currentGroup = { date: dateKey, bookings: [] };
+    var key = fmtDayKey(bk.start);
+    if (key !== lastKey) {
+      lastKey = key;
+      currentGroup = { key: key, label: fmtDayLabel(bk.start), bookings: [] };
       groups.push(currentGroup);
     }
     currentGroup.bookings.push(bk);
@@ -110,25 +119,31 @@ async function main() {
   var listHtml = '';
   for (var g = 0; g < groups.length; g++) {
     var grp = groups[g];
-    var isToday = fmtDay(now) === grp.date;
-    var isTomorrow = (function(){
-      var tm = new Date(now); tm.setDate(tm.getDate()+1);
-      return fmtDay(tm) === grp.date;
-    })();
+    var isToday    = grp.key === todayKey;
+    var isTomorrow = grp.key === tomorrowKey;
 
-    var dateLabel = grp.date;
-    if (isToday) dateLabel = 'TODAY &mdash; ' + grp.date;
-    else if (isTomorrow) dateLabel = 'TOMORROW &mdash; ' + grp.date;
+    var labelPrefix = '';
+    var hdrClass = 'date-hdr';
+    if (isToday)    { labelPrefix = 'TODAY'; hdrClass = 'date-hdr today-hdr'; }
+    else if (isTomorrow) { labelPrefix = 'TOMORROW'; hdrClass = 'date-hdr tomorrow-hdr'; }
 
-    listHtml += '<div class="date-hdr'+(isToday?' today-hdr':'')+'">'+dateLabel+'</div>';
+    listHtml += '<div class="'+hdrClass+'">'
+      + (labelPrefix ? '<span class="day-pill">'+labelPrefix+'</span> ' : '')
+      + esc(grp.label)
+      + '</div>';
 
     for (var b = 0; b < grp.bookings.length; b++) {
       var bk = grp.bookings[b];
       var isNow = bk.start <= now && bk.end > now;
-      var rowStyle = 'border-left:6px solid '+bk.color+';background:'+(isNow?'#1c1700':'#141416')+';';
-      listHtml += '<div class="brow" style="'+rowStyle+'">'
-        + '<div class="btime"><span class="bstart">'+fmtTime(bk.start)+'</span><span class="bend">&ndash; '+fmtTime(bk.end)+'</span></div>'
-        + '<div class="btitle">'+esc(bk.title)+(isNow?' <span class="nowbadge">NOW</span>':'')+'</div>'
+      listHtml += '<div class="brow'+(isNow?' brow-now':'')+'" style="border-left:8px solid '+bk.color+';">'
+        + '<div class="btime">'
+        + '<span class="bstart">'+fmtTime(bk.start)+'</span>'
+        + '<span class="bend">'+fmtTime(bk.end)+'</span>'
+        + '</div>'
+        + '<div class="bmid">'
+        + '<span class="btitle">'+esc(bk.title)+'</span>'
+        + (isNow ? '<span class="nowbadge">NOW</span>' : '')
+        + '</div>'
         + '<div class="bspace" style="color:'+bk.color+'">'+esc(bk.space)+'</div>'
         + '</div>';
     }
@@ -136,60 +151,95 @@ async function main() {
 
   if (!listHtml) listHtml = '<div class="empty">No upcoming bookings</div>';
 
-  var updatedStr = fmtTime(now);
-  var countStr = upcoming.length + ' events';
+  var monthLabel  = MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  var updatedStr  = fmtTime(now);
+  var countStr    = upcoming.length + ' events';
 
-  // Clock vars for JS
   var html = '<!DOCTYPE html>\n'
     + '<html><head>\n'
     + '<meta charset="UTF-8">\n'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">\n'
     + '<title>Gemco Venue Bookings</title>\n'
     + '<style>\n'
-    + 'html,body{margin:0;padding:0;background:#0d0d0f;color:#e8e4dc;font-family:Arial,Helvetica,sans-serif;height:100%;overflow:hidden;}\n'
-    + '#page{height:100vh;display:-webkit-box;display:-webkit-flex;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;flex-direction:column;}\n'
-    + '#hdr{background:#111114;padding:14px 24px;border-bottom:2px solid #c9a84c;overflow:hidden;-webkit-box-flex:0;-webkit-flex:0 0 auto;flex:0 0 auto;}\n'
+    + 'html,body{margin:0;padding:0;background:#09090b;color:#f0ece4;font-family:Arial,Helvetica,sans-serif;height:100%;overflow:hidden;}\n'
+
+    /* ── HEADER ── */
+    + '#hdr{background:#111116;border-bottom:3px solid #f0b429;padding:16px 28px;overflow:hidden;}\n'
     + '#hdr-left{float:left;}\n'
     + '#hdr-right{float:right;text-align:right;}\n'
-    + '#vname{font-size:42px;font-weight:bold;color:#e8e4dc;line-height:1;margin:0;}\n'
-    + '#vsub{font-size:13px;letter-spacing:5px;text-transform:uppercase;color:#c9a84c;margin-top:5px;}\n'
-    + '#clock{font-size:52px;font-weight:300;color:#e8e4dc;line-height:1;letter-spacing:2px;}\n'
-    + '#dateline{font-size:15px;color:#888;margin-top:4px;}\n'
-    + '#meta{background:#0d0d0f;padding:8px 24px;border-bottom:1px solid #222;overflow:hidden;-webkit-box-flex:0;-webkit-flex:0 0 auto;flex:0 0 auto;}\n'
-    + '#meta-left{float:left;font-size:22px;font-weight:bold;color:#e8e4dc;line-height:32px;}\n'
-    + '#meta-right{float:right;text-align:right;}\n'
-    + '.badge{font-size:14px;color:#c9a84c;border:1px solid #7a6230;padding:4px 12px;border-radius:12px;display:inline-block;}\n'
-    + '.upd{font-size:12px;color:#555;display:block;margin-bottom:3px;}\n'
-    + '#scroll-area{-webkit-box-flex:1;-webkit-flex:1 1 auto;flex:1 1 auto;overflow:hidden;position:relative;}\n'
-    + '#list{padding:0 16px 40px;}\n'
-    + '.date-hdr{font-size:15px;letter-spacing:3px;text-transform:uppercase;color:#7a6230;padding:16px 8px 6px;border-bottom:1px solid #222;margin-bottom:4px;}\n'
-    + '.today-hdr{color:#c9a84c;letter-spacing:3px;}\n'
-    + '.brow{padding:14px 16px;margin-bottom:6px;border-radius:6px;overflow:hidden;}\n'
-    + '.btime{float:left;width:160px;}\n'
-    + '.bstart{font-size:22px;font-weight:bold;color:#e8e4dc;display:block;line-height:1.2;}\n'
-    + '.bend{font-size:15px;color:#666;display:block;margin-top:2px;}\n'
-    + '.btitle{margin-left:176px;margin-right:140px;font-size:22px;font-weight:bold;color:#e8e4dc;line-height:1.3;padding-top:4px;}\n'
-    + '.bspace{float:right;font-size:15px;font-weight:bold;text-align:right;padding-top:8px;width:130px;}\n'
-    + '.nowbadge{font-size:12px;background:#c9a84c;color:#000;padding:2px 8px;border-radius:3px;margin-left:8px;vertical-align:middle;}\n'
-    + '.empty{font-size:20px;color:#555;text-align:center;padding:60px;}\n'
+    + '#vname{font-size:48px;font-weight:bold;color:#ffffff;line-height:1;margin:0;}\n'
+    + '#vsub{font-size:12px;letter-spacing:6px;text-transform:uppercase;color:#f0b429;margin-top:6px;}\n'
+    + '#month-pill{display:inline-block;background:#1e1a00;border:1px solid #f0b429;color:#f0b429;font-size:13px;letter-spacing:3px;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-top:8px;}\n'
+    + '#clock{font-size:56px;font-weight:300;color:#ffffff;line-height:1;}\n'
+    + '#dateline{font-size:14px;color:#888;margin-top:5px;}\n'
+    + '#upd{font-size:11px;color:#555;margin-top:3px;}\n'
+
+    /* ── META BAR ── */
+    + '#meta{background:#111116;border-bottom:1px solid #222;padding:8px 28px;overflow:hidden;}\n'
+    + '#meta-title{float:left;font-size:26px;font-weight:bold;color:#ffffff;line-height:36px;}\n'
+    + '#meta-right{float:right;}\n'
+    + '.badge{font-size:14px;color:#f0b429;border:1px solid #7a6230;padding:5px 14px;border-radius:14px;display:inline-block;background:#1a1400;}\n'
+
+    /* ── SCROLL AREA ── */
+    + '#scroll-area{position:relative;overflow:hidden;}\n'
+    + '#list{padding:8px 20px 60px;}\n'
+
+    /* ── DATE HEADERS ── */
+    + '.date-hdr{font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#555;padding:18px 8px 6px;border-bottom:1px solid #222;margin-bottom:6px;overflow:hidden;}\n'
+    + '.today-hdr{color:#f0f0f0;border-bottom:2px solid #f0b429;}\n'
+    + '.tomorrow-hdr{color:#cccccc;border-bottom:1px solid #555;}\n'
+    + '.day-pill{display:inline-block;background:#f0b429;color:#000;font-size:12px;font-weight:bold;letter-spacing:2px;padding:2px 10px;border-radius:4px;margin-right:6px;vertical-align:middle;}\n'
+    + '.tomorrow-hdr .day-pill{background:#555;color:#fff;}\n'
+
+    /* ── BOOKING ROWS ── */
+    + '.brow{background:#18181c;border-radius:8px;margin-bottom:8px;padding:14px 16px;overflow:hidden;}\n'
+    + '.brow-now{background:#1c1800;}\n'
+    + '.btime{float:left;width:150px;}\n'
+    + '.bstart{font-size:26px;font-weight:bold;color:#ffffff;display:block;line-height:1.1;}\n'
+    + '.bend{font-size:15px;color:#666;display:block;margin-top:3px;}\n'
+    + '.bmid{margin-left:166px;margin-right:150px;padding-top:2px;}\n'
+    + '.btitle{font-size:24px;font-weight:bold;color:#f0ece4;display:block;line-height:1.2;}\n'
+    + '.bspace{float:right;font-size:17px;font-weight:bold;text-align:right;width:140px;padding-top:6px;}\n'
+    + '.nowbadge{display:inline-block;font-size:12px;background:#f0b429;color:#000;font-weight:bold;padding:2px 10px;border-radius:4px;margin-left:10px;vertical-align:middle;letter-spacing:1px;}\n'
+    + '.empty{font-size:22px;color:#444;text-align:center;padding:80px;}\n'
     + '</style>\n'
     + '</head><body>\n'
-    + '<div id="page">\n'
-    + '  <div id="hdr">\n'
-    + '    <div id="hdr-left"><div id="vname">Gemco</div><div id="vsub">Venue Bookings</div></div>\n'
-    + '    <div id="hdr-right"><div id="clock">--:--</div><div id="dateline"></div></div>\n'
-    + '    <div style="clear:both"></div>\n'
+
+    + '<div id="hdr">\n'
+    + '  <div id="hdr-left">\n'
+    + '    <div id="vname">Gemco</div>\n'
+    + '    <div id="vsub">Venue Bookings</div>\n'
+    + '    <div id="month-pill">'+monthLabel+'</div>\n'
     + '  </div>\n'
-    + '  <div id="meta">\n'
-    + '    <div id="meta-left">Upcoming Bookings</div>\n'
-    + '    <div id="meta-right"><span class="upd">Updated '+updatedStr+'</span><span class="badge">'+countStr+'</span></div>\n'
-    + '    <div style="clear:both"></div>\n'
+    + '  <div id="hdr-right">\n'
+    + '    <div id="clock">--:--</div>\n'
+    + '    <div id="dateline"></div>\n'
+    + '    <div id="upd">Updated '+updatedStr+'</div>\n'
     + '  </div>\n'
-    + '  <div id="scroll-area">\n'
-    + '    <div id="list">'+listHtml+'</div>\n'
-    + '  </div>\n'
+    + '  <div style="clear:both"></div>\n'
     + '</div>\n'
+
+    + '<div id="meta">\n'
+    + '  <div id="meta-title">Upcoming Bookings</div>\n'
+    + '  <div id="meta-right"><span class="badge">'+countStr+'</span></div>\n'
+    + '  <div style="clear:both"></div>\n'
+    + '</div>\n'
+
+    + '<div id="scroll-area">\n'
+    + '  <div id="list">'+listHtml+'</div>\n'
+    + '</div>\n'
+
     + '<script>\n'
+    + 'function ht(){return window.innerHeight||document.documentElement.clientHeight||768;}\n'
+    + 'function resize(){\n'
+    + '  var hh=document.getElementById("hdr").offsetHeight;\n'
+    + '  var mh=document.getElementById("meta").offsetHeight;\n'
+    + '  var sa=document.getElementById("scroll-area");\n'
+    + '  sa.style.height=(ht()-hh-mh)+"px";\n'
+    + '}\n'
+    + 'resize();\n'
+    + 'window.onresize=resize;\n'
+
     + 'function updateClock(){\n'
     + '  var n=new Date(),h=n.getHours(),m=n.getMinutes(),ampm=h>=12?"pm":"am";\n'
     + '  h=h%12;if(h===0)h=12;\n'
@@ -199,14 +249,21 @@ async function main() {
     + '  document.getElementById("dateline").innerHTML=days[n.getDay()]+" "+n.getDate()+" "+months[n.getMonth()]+" "+n.getFullYear();\n'
     + '}\n'
     + 'setInterval(updateClock,1000); updateClock();\n'
-    + 'var sp=0,sa=document.getElementById("scroll-area"),li=document.getElementById("list");\n'
+
+    /* Smooth scroll — moves 2px every 30ms, pauses 3s at top/bottom */
+    + 'var sp=0,paused=0,dir=1;\n'
+    + 'var sa=document.getElementById("scroll-area");\n'
+    + 'var li=document.getElementById("list");\n'
     + 'setInterval(function(){\n'
+    + '  if(paused>0){paused--;return;}\n'
     + '  var mx=li.offsetHeight-sa.offsetHeight+40;\n'
-    + '  if(mx<=0){sp=0;return;}\n'
-    + '  sp+=100;\n'
-    + '  if(sp>=mx)sp=0;\n'
+    + '  if(mx<=0)return;\n'
+    + '  sp+=2;\n'
+    + '  if(sp>=mx){sp=mx;paused=100;dir=-1;}\n'  /* pause 3s at bottom then reset to top */
+    + '  if(sp<=0){sp=0;paused=100;dir=1;}\n'
     + '  li.style.marginTop="-"+sp+"px";\n'
-    + '},4000);\n'
+    + '  if(dir===-1 && paused>0){sp=0;}\n'  /* jump back to top after pause */
+    + '},30);\n'
     + '</script>\n'
     + '</body></html>\n';
 
