@@ -236,18 +236,20 @@ async function main() {
     +'}\n'
     +'setInterval(updateClock,1000); updateClock();\n'
 
-    // Smooth scroll future list only
-    +'var sp=0,paused=0;\n'
-    +'var sa=document.getElementById("scroll-area");\n'
-    +'var fl=document.getElementById("future-list");\n'
-    +'setInterval(function(){\n'
-    +'  if(paused>0){paused--;if(paused===0){sp=0;fl.style.marginTop="0px";}return;}\n'
-    +'  var mx=fl.offsetHeight-sa.offsetHeight+40;\n'
-    +'  if(mx<=0)return;\n'
-    +'  sp+=1.5;\n'
-    +'  if(sp>=mx){sp=mx;paused=150;}\n'
-    +'  fl.style.marginTop="-"+sp+"px";\n'
-    +'},30);\n'
+    // Smooth scroll future list only — delayed to allow layout to complete
+    +'setTimeout(function(){\n'
+    +'  var sp=0,paused=0;\n'
+    +'  var sa=document.getElementById("scroll-area");\n'
+    +'  var fl=document.getElementById("future-list");\n'
+    +'  setInterval(function(){\n'
+    +'    if(paused>0){paused--;if(paused===0){sp=0;fl.style.marginTop="0px";}return;}\n'
+    +'    var mx=fl.offsetHeight-sa.offsetHeight+40;\n'
+    +'    if(mx<=0)return;\n'
+    +'    sp+=1.5;\n'
+    +'    if(sp>=mx){sp=mx;paused=150;}\n'
+    +'    fl.style.marginTop="-"+sp+"px";\n'
+    +'  },30);\n'
+    +'},500);\n'
     +'</script>\n</body></html>\n';
 
   fs.writeFileSync('index.html', html);
