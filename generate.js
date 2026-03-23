@@ -169,7 +169,7 @@ async function main() {
     +'#future-label-left{float:left;font-size:20px;font-weight:bold;color:#aaa;line-height:28px;}\n'
     +'#future-label-right{float:right;}\n'
     +'.badge{font-size:13px;color:#f0b429;border:1px solid #7a6230;padding:4px 14px;border-radius:14px;display:inline-block;background:#1a1400;}\n'
-    +'#scroll-area{overflow:hidden;position:relative;}\n'
+    +'#scroll-area{overflow:hidden;position:relative;-webkit-overflow-scrolling:touch;}\n'
     +'#future-list{padding:6px 20px 60px;}\n'
     // Date headers in future
     +'.date-hdr{padding:14px 8px 7px;margin-bottom:4px;overflow:hidden;}\n'
@@ -236,18 +236,19 @@ async function main() {
     +'}\n'
     +'setInterval(updateClock,1000); updateClock();\n'
 
-    // Smooth scroll future list only — delayed to allow layout to complete
+    // Smooth scroll using scrollTop — works on all iOS Safari
     +'setTimeout(function(){\n'
     +'  var sp=0,paused=0;\n'
     +'  var sa=document.getElementById("scroll-area");\n'
-    +'  var fl=document.getElementById("future-list");\n'
+    +'  sa.style.overflowY="scroll";\n'
+    +'  sa.style.webkitOverflowScrolling="touch";\n'
     +'  setInterval(function(){\n'
-    +'    if(paused>0){paused--;if(paused===0){sp=0;fl.style.marginTop="0px";}return;}\n'
-    +'    var mx=fl.offsetHeight-sa.offsetHeight+40;\n'
+    +'    if(paused>0){paused--;if(paused===0){sp=0;sa.scrollTop=0;}return;}\n'
+    +'    var mx=sa.scrollHeight-sa.offsetHeight;\n'
     +'    if(mx<=0)return;\n'
     +'    sp+=1.5;\n'
     +'    if(sp>=mx){sp=mx;paused=150;}\n'
-    +'    fl.style.marginTop="-"+sp+"px";\n'
+    +'    sa.scrollTop=sp;\n'
     +'  },30);\n'
     +'},500);\n'
     +'</script>\n</body></html>\n';
