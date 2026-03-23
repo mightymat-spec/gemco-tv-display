@@ -145,7 +145,7 @@ async function main() {
   lines.push('#ck{font-size:52px;font-weight:300;color:#fff;line-height:1;}');
   lines.push('#dl{font-size:14px;color:#aaa;margin-top:4px;}');
   lines.push('#upd{font-size:11px;color:#555;margin-top:2px;}');
-  lines.push('#tp{background:#111116;border-bottom:3px solid #f0b429;padding:0 20px 10px;}');
+  lines.push('#tp{background:#111116;border-bottom:3px solid #f0b429;padding:0 20px 10px;max-height:35vh;overflow-y:auto;}');
   lines.push('.thdr{padding:12px 8px 8px;overflow:hidden;border-bottom:2px solid #f0b429;margin-bottom:8px;}');
   lines.push('.tpill{display:inline-block;background:#f0b429;color:#000;font-size:13px;font-weight:bold;letter-spacing:2px;padding:3px 12px;border-radius:4px;margin-right:10px;vertical-align:middle;}');
   lines.push('.tday{font-size:26px;font-weight:bold;color:#fff;vertical-align:middle;margin-right:8px;}');
