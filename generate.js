@@ -214,6 +214,17 @@ async function main() {
   lines.push('  sa.scrollTop=sp;');
   lines.push('},30);');
   lines.push('<\/script>');
+  lines.push('// Auto reload');
+lines.push('function scheduleReload(){');
+lines.push('  var n=new Date();');
+lines.push('  // Reload at next midnight');
+lines.push('  var midnight=new Date(n);midnight.setHours(24,0,0,0);');
+lines.push('  var msToMidnight=midnight-n;');
+lines.push('  setTimeout(function(){location.reload();},msToMidnight);');
+lines.push('  // Also reload every 30 minutes to pick up fresh data');
+lines.push('  setInterval(function(){location.reload();},30*60*1000);');
+lines.push('}');
+lines.push('scheduleReload();');
   lines.push('</body></html>');
 
   fs.writeFileSync('index.html', lines.join('\n'));
