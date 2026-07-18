@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Gemco Venue Bookings</title>
+<style>
+html,body{margin:0;padding:0;background:#09090b;color:#f0ece4;font-family:Arial,Helvetica,sans-serif;height:100%;overflow:hidden;}
+#hdr{background:#111116;border-bottom:3px solid #f0b429;padding:14px 24px;overflow:hidden;}
+#hl{float:left;}
+#hr{float:right;text-align:right;}
+#vn{font-size:44px;font-weight:bold;color:#fff;line-height:1;margin:0;}
+#vs{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:#f0b429;margin-top:4px;}
+#ml{display:inline-block;background:#1e1a00;border:1px solid #f0b429;color:#f0b429;font-size:13px;letter-spacing:3px;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-top:7px;}
+#ck{font-size:52px;font-weight:300;color:#fff;line-height:1;}
+#dl{font-size:14px;color:#aaa;margin-top:4px;}
+#upd{font-size:11px;color:#555;margin-top:2px;}
+#tp{background:#111116;border-bottom:3px solid #f0b429;padding:0 20px 10px;max-height:35vh;overflow-y:auto;}
+.thdr{padding:12px 8px 8px;overflow:hidden;border-bottom:2px solid #f0b429;margin-bottom:8px;}
+.tpill{display:inline-block;background:#f0b429;color:#000;font-size:13px;font-weight:bold;letter-spacing:2px;padding:3px 12px;border-radius:4px;margin-right:10px;vertical-align:middle;}
+.tday{font-size:26px;font-weight:bold;color:#fff;vertical-align:middle;margin-right:8px;}
+.tdate{font-size:22px;font-weight:bold;color:#f0b429;vertical-align:middle;}
+#fl{background:#0d0d10;border-bottom:1px solid #2a2a30;padding:8px 24px;overflow:hidden;}
+#flt{float:left;font-size:20px;font-weight:bold;color:#aaa;line-height:28px;}
+#flr{float:right;}
+.badge{font-size:13px;color:#f0b429;border:1px solid #7a6230;padding:4px 14px;border-radius:14px;display:inline-block;background:#1a1400;}
+#sa{overflow-y:scroll;background:#09090b;}
+#sl{padding:6px 20px 80px;}
+.dhdr{padding:14px 8px 7px;margin-bottom:4px;overflow:hidden;border-bottom:1px solid #2a2a2a;}
+.tom{border-bottom:2px solid #888;}
+.dpill{display:inline-block;background:#555;color:#fff;font-size:13px;font-weight:bold;letter-spacing:2px;padding:3px 12px;border-radius:4px;margin-right:10px;vertical-align:middle;}
+.dday{font-size:24px;font-weight:bold;color:#aaa;vertical-align:middle;}
+.tom .dday{color:#ddd;}
+.ddate{font-size:20px;font-weight:bold;color:#666;vertical-align:middle;}
+.tom .ddate{color:#aaa;}
+.brow{background:#18181c;border-radius:8px;margin-bottom:7px;padding:12px 14px;overflow:hidden;}
+.now{background:#1c1800;}
+.bt{float:left;width:150px;}
+.bs{font-size:26px;font-weight:bold;color:#fff;display:block;line-height:1.1;}
+.be{font-size:14px;color:#666;display:block;margin-top:3px;}
+.bm{margin-left:166px;margin-right:155px;padding-top:3px;}
+.bi{font-size:23px;font-weight:bold;color:#f0ece4;display:block;line-height:1.2;}
+.bsp{float:right;font-size:17px;font-weight:bold;text-align:right;width:145px;padding-top:5px;}
+.nb{display:inline-block;font-size:12px;background:#f0b429;color:#000;font-weight:bold;padding:2px 10px;border-radius:4px;margin-left:10px;vertical-align:middle;}
+.none{font-size:18px;color:#555;padding:10px 8px;font-style:italic;}
+</style></head><body>
+
+<div id="hdr">
+  <div id="hl"><div id="vn">Gemco</div><div id="vs">Venue Bookings</div><div id="ml"></div></div>
+  <div id="hr"><div id="ck">--:--</div><div id="dl"></div><div id="upd"></div></div>
+  <div style="clear:both"></div>
+</div>
+<div id="tp">
+  <div class="thdr"><span class="tpill">TODAY</span><span class="tday" id="td"></span><span class="tdate" id="tdt"></span></div>
+  <div id="tbdy"></div>
+</div>
+<div id="fl">
+  <div id="flt">Coming Up &mdash; Next 2 Weeks</div>
+  <div id="flr"><span class="badge" id="fcnt"></span></div>
+  <div style="clear:both"></div>
+</div>
+<div id="sa"><div id="sl"></div></div>
+
+<script>
+var DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+var MSHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DAYS_AHEAD = 14;
+
+// Clock
+function uc() {
+  var n = new Date(), h = n.getHours(), m = n.getMinutes(), ap = h >= 12 ? "pm" : "am";
+  h = h % 12; if (!h) h = 12;
+  document.getElementById("ck").innerHTML = h + ":" + (m < 10 ? "0" + m : m) + " " + ap;
+  document.getElementById("dl").innerHTML = DAYS[n.getDay()] + " " + n.getDate() + " " + MONTHS[n.getMonth()] + " " + n.getFullYear();
+  document.getElementById("ml").innerHTML = MONTHS[n.getMonth()] + " " + n.getFullYear();
+}
+setInterval(uc, 1000); uc();
+
+// Helpers
+function fmtTime(d) {
+  var h = d.getHours(), m = d.getMinutes(), ap = h >= 12 ? "pm" : "am";
+  h = h % 12; if (!h) h = 12;
+  return h + ":" + (m < 10 ? "0" + m : m) + " " + ap;
+}
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function dayKey(d) { return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
+
+function rowHtml(bk, isNow) {
+  return '<div class="brow' + (isNow ? ' now' : '') + '" style="border-left:8px solid ' + bk.color + ';">'
+    + '<div class="bt"><span class="bs">' + fmtTime(new Date(bk.start)) + '</span>'
+    + '<span class="be">until ' + fmtTime(new Date(bk.end)) + '</span></div>'
+    + '<div class="bm"><span class="bi">' + esc(bk.title) + '</span>' + (isNow ? '<span class="nb">NOW</span>' : '') + '</div>'
+    + '<div class="bsp" style="color:' + bk.color + '">' + esc(bk.space) + '</div>'
+    + '</div>';
+}
+
+// Render
+function render(data) {
+  var now  = new Date();
+  var sot  = new Date(now); sot.setHours(0,0,0,0);
+  var eot  = new Date(sot); eot.setDate(eot.getDate() + 1);
+  var cut  = new Date(sot); cut.setDate(cut.getDate() + DAYS_AHEAD);
+  var tom  = new Date(sot); tom.setDate(tom.getDate() + 1);
+  var tomKey = dayKey(tom);
+
+  // Today heading
+  document.getElementById("td").innerHTML  = DAYS[now.getDay()];
+  document.getElementById("tdt").innerHTML = now.getDate() + " " + MSHORT[now.getMonth()];
+
+  var bookings = (data.bookings || []).map(function(b) {
+    return { start: new Date(b.start), end: new Date(b.end), title: b.title, space: b.space, color: b.color };
+  });
+
+  var todayBks  = bookings.filter(function(b) { return b.start >= sot && b.start < eot; });
+  var futureBks = bookings.filter(function(b) { return b.start >= eot && b.start < cut; });
+
+  // Today panel
+  var todayHtml = "";
+  if (todayBks.length === 0) {
+    todayHtml = '<div class="none">No bookings today</div>';
+  } else {
+    todayBks.forEach(function(b) { todayHtml += rowHtml(b, b.start <= now && b.end > now); });
+  }
+  document.getElementById("tbdy").innerHTML = todayHtml;
+
+  // Future panel
+  document.getElementById("fcnt").innerHTML = futureBks.length + " events";
+  var groups = [], lastKey = "", curGroup = null;
+  futureBks.forEach(function(b) {
+    var k = dayKey(b.start);
+    if (k !== lastKey) { lastKey = k; curGroup = { key: k, date: b.start, bks: [] }; groups.push(curGroup); }
+    curGroup.bks.push(b);
+  });
+  var futureHtml = "";
+  groups.forEach(function(g) {
+    var isTom = g.key === tomKey;
+    futureHtml += '<div class="dhdr' + (isTom ? ' tom' : '') + '">'
+      + (isTom ? '<span class="dpill">TOMORROW</span>' : '')
+      + '<span class="dday">' + DAYS[g.date.getDay()] + '</span>'
+      + ' <span class="ddate">' + g.date.getDate() + ' ' + MSHORT[g.date.getMonth()] + '</span>'
+      + '</div>';
+    g.bks.forEach(function(b) { futureHtml += rowHtml(b, false); });
+  });
+  if (!futureHtml) futureHtml = '<div class="none">No further bookings in the next ' + DAYS_AHEAD + ' days</div>';
+  document.getElementById("sl").innerHTML = futureHtml;
+
+  // Updated timestamp
+  var upd = data.updated ? new Date(data.updated) : now;
+  document.getElementById("upd").innerHTML = "Updated " + fmtTime(upd);
+
+  // Fit scroll area height
+  var ph = window.innerHeight || 768;
+  var used = document.getElementById("hdr").offsetHeight
+           + document.getElementById("tp").offsetHeight
+           + document.getElementById("fl").offsetHeight;
+  document.getElementById("sa").style.height = (ph - used) + "px";
+}
+
+// Fetch and refresh
+function load() {
+  fetch("data/bookings.json?t=" + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) { render(data); })
+    .catch(function(e) { console.error("Load failed:", e); });
+}
+load();
+setInterval(load, 15 * 60 * 1000);
+
+// Auto scroll
+var sp = 0, paused = 0;
+setInterval(function() {
+  if (paused > 0) { paused--; if (paused === 0) { sp = 0; document.getElementById("sa").scrollTop = 0; } return; }
+  var sa = document.getElementById("sa");
+  var mx = sa.scrollHeight - sa.clientHeight;
+  if (mx <= 0) return;
+  sp += 1.5;
+  if (sp >= mx) { sp = mx; paused = 150; }
+  sa.scrollTop = sp;
+}, 30);
+</script>
+</body></html>
