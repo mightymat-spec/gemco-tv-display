@@ -15,6 +15,14 @@ const DAYS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satu
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+// AEST offset: UTC+10 standard, UTC+11 daylight saving (Oct-Apr)
+// Use +11 during DST months, +10 otherwise
+function getAESTOffset() {
+  const m = new Date().getUTCMonth() + 1; // 1-12
+  // DST in Victoria: first Sun Oct to first Sun Apr
+  return (m >= 10 || m <= 3) ? 11 : 10;
+}
+
 function fetchUrl(url) {
   return new Promise((resolve, reject) => {
     https.get(url, res => {
@@ -71,7 +79,8 @@ function row(bk, isNow) {
 }
 
 async function main() {
-  const now = new Date(new Date().toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' }));
+  const offsetHours = getAESTOffset();
+  const now = new Date(Date.now() + offsetHours * 60 * 60 * 1000);
   const all = [];
   for (const space of SPACES) {
     try {
@@ -211,7 +220,7 @@ async function main() {
   lines.push('</body></html>');
 
   fs.writeFileSync('index.html', lines.join('\n'));
-  console.log('Written — today:'+todayBks.length+' future:'+futureBks.length);
+  console.log('Written — AEST offset: UTC+'+offsetHours+' today:'+todayBks.length+' future:'+futureBks.length);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
