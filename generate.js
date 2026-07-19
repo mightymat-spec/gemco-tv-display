@@ -71,7 +71,7 @@ function row(bk, isNow) {
 }
 
 async function main() {
-  const now = new Date();
+  const now = new Date(new Date().toLocale;
   const all = [];
   for (const space of SPACES) {
     try {
