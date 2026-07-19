@@ -71,7 +71,7 @@ function row(bk, isNow) {
 }
 
 async function main() {
-  const now = new Date(new Date().toLocale;
+  const now = new Date(new Date().toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' }));
   const all = [];
   for (const space of SPACES) {
     try {
@@ -91,8 +91,6 @@ async function main() {
   const todayBks  = all.filter(b => b.start >= sot && b.start < eot);
   const futureBks = all.filter(b => b.start >= eot && b.start < cut);
 
-  // Today HTML — NOTE: rows are baked in at generate time.
-  // The TODAY heading date is rendered live by JS in the browser.
   let todayHtml = '';
   if (todayBks.length === 0) {
     todayHtml = '<div class="none">No bookings today</div>';
@@ -100,7 +98,6 @@ async function main() {
     todayBks.forEach(b => { todayHtml += row(b, b.start <= now && b.end > now); });
   }
 
-  // Future HTML grouped by day
   let futureHtml = '';
   let lastKey = '', curGroup = null;
   const groups = [];
@@ -172,46 +169,30 @@ async function main() {
   lines.push('.none{font-size:18px;color:#555;padding:10px 8px;font-style:italic;}');
   lines.push('</style></head><body>');
 
-  // Header
   lines.push('<div id="hdr">');
   lines.push('<div id="hl"><div id="vn">Gemco</div><div id="vs">Venue Bookings</div><div id="ml">'+monthLabel+'</div></div>');
   lines.push('<div id="hr"><div id="ck">--:--</div><div id="dl"></div><div id="upd">Updated '+updatedStr+'</div></div>');
   lines.push('<div style="clear:both"></div></div>');
 
-  // Today panel — heading rendered live by JS
   lines.push('<div id="tp">');
   lines.push('<div class="thdr"><span class="tpill">TODAY</span><span class="tday" id="td"></span><span class="tdate" id="tdt"></span></div>');
   lines.push(todayHtml);
   lines.push('</div>');
 
-  // Future label
   lines.push('<div id="fl"><div id="flt">Coming Up &mdash; Next 2 Weeks</div><div id="flr"><span class="badge">'+futureBks.length+' events</span></div><div style="clear:both"></div></div>');
-
-  // Scrolling area
   lines.push('<div id="sa"><div id="sl">'+futureHtml+'</div></div>');
 
-  // Script
   lines.push('<script>');
-
-  // Day/month arrays used by clock and today heading
   lines.push('var D=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];');
   lines.push('var M=["January","February","March","April","May","June","July","August","September","October","November","December"];');
   lines.push('var MS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];');
-
-  // Clock
   lines.push('function uc(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),ap=h>=12?"pm":"am";h=h%12;if(!h)h=12;document.getElementById("ck").innerHTML=h+":"+(m<10?"0"+m:m)+" "+ap;document.getElementById("dl").innerHTML=D[n.getDay()]+" "+n.getDate()+" "+M[n.getMonth()]+" "+n.getFullYear();}');
   lines.push('setInterval(uc,1000);uc();');
-
-  // Today heading — rendered live so it updates after midnight reload
   lines.push('(function(){var n=new Date();document.getElementById("td").innerHTML=D[n.getDay()];document.getElementById("tdt").innerHTML=n.getDate()+" "+MS[n.getMonth()];})();');
-
-  // Size scroll area
   lines.push('var sa=document.getElementById("sa");');
   lines.push('var ph=window.innerHeight||document.documentElement.clientHeight||768;');
   lines.push('var used=document.getElementById("hdr").offsetHeight+document.getElementById("tp").offsetHeight+document.getElementById("fl").offsetHeight;');
   lines.push('sa.style.height=(ph-used)+"px";');
-
-  // Auto scroll
   lines.push('var sp=0,paused=0;');
   lines.push('setInterval(function(){');
   lines.push('  if(paused>0){paused--;if(paused===0){sp=0;sa.scrollTop=0;}return;}');
@@ -221,14 +202,11 @@ async function main() {
   lines.push('  if(sp>=mx){sp=mx;paused=150;}');
   lines.push('  sa.scrollTop=sp;');
   lines.push('},30);');
-
-  // Midnight reload — reloads the page at 00:00:05 to pick up the new day's generated HTML
   lines.push('(function(){');
   lines.push('  var n=new Date();');
   lines.push('  var midnight=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,0,0,5);');
   lines.push('  setTimeout(function(){location.reload();},midnight-n);');
   lines.push('})();');
-
   lines.push('<\/script>');
   lines.push('</body></html>');
 
