@@ -2,16 +2,16 @@ const https = require('https');
 const fs = require('fs');
 
 const SPACES = [
-  { name: 'Theatre',     color: '#f0b429', url: 'https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644' },
+  { name: 'Theatre', color: '#f0b429', url: 'https://thegem.skedda.com/ical?k=wllmzKDQxM9khM0tTiumcnfX9VblH_0Y&i=799644' },
   { name: 'Bar & Foyer', color: '#f05454', url: 'https://thegem.skedda.com/ical?k=ni2G54X1L4msVJezC0Q833xhIEgRSoFs&i=799645' },
-  { name: 'Kitchen',     color: '#3dd68c', url: 'https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646' },
-  { name: 'Hall',        color: '#5b9cf6', url: 'https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647' },
-  { name: 'Carriage',    color: '#38d9f5', url: 'https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648' },
-  { name: 'Car Park',    color: '#f5a623', url: 'https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649' }
-];
+  { name: 'Kitchen', color: '#3dd68c', url: 'https://thegem.skedda.com/ical?k=9Lh0hWUw7lemD9ywTqzLKpki_GYvXaBg&i=799646' },
+  { name: 'Hall', color: '#5b9cf6', url: 'https://thegem.skedda.com/ical?k=8a6qMFX7qfqYT4oJp4bTU396Pq8hNvVP&i=799647' },
+  { name: 'Carriage', color: '#38d9f5', url: 'https://thegem.skedda.com/ical?k=Y7y2dMVSIC5W3_TB7_u3-AtO5nX0kPMK&i=799648' },
+  { name: 'Car Park', color: '#f5a623', url: 'https://thegem.skedda.com/ical?k=emlWXO3cntT_vy6oohiEi6SdG7dZYVlH&i=799649' }
+  ];
 
 const DAYS_AHEAD = 14;
-const DAYS  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -19,8 +19,8 @@ const MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // Use +11 during DST months, +10 otherwise
 function getAESTOffset() {
   const m = new Date().getUTCMonth() + 1; // 1-12
-  // DST in Victoria: first Sun Oct to first Sun Apr
-  return (m >= 10 || m <= 3) ? 11 : 10;
+// DST in Victoria: first Sun Oct to first Sun Apr
+return (m >= 10 || m <= 3) ? 11 : 10;
 }
 
 function fetchUrl(url) {
@@ -57,8 +57,8 @@ function parseIcal(text, spaceName, color) {
   const blocks = unfold(text).split('BEGIN:VEVENT'); blocks.shift();
   return blocks.map(block => {
     const start = parseDt(getProp(block,'DTSTART'));
-    const end   = parseDt(getProp(block,'DTEND'));
-    const raw   = getProp(block,'SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';');
+    const end = parseDt(getProp(block,'DTEND'));
+    const raw = getProp(block,'SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').replace(/\\;/g,';');
     if (!start) return null;
     return { start, end, title: cleanTitle(raw), space: spaceName, color };
   }).filter(Boolean);
@@ -66,16 +66,16 @@ function parseIcal(text, spaceName, color) {
 function fmtDayKey(d) { return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
 function fmtTime(d) {
   var h=d.getHours(),m=d.getMinutes(),ampm=h>=12?'pm':'am';
-  h=h%12; if(h===0)h=12;
+        h=h%12; if(h===0)h=12;
   return h+':'+(m<10?'0'+m:m)+' '+ampm;
 }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function row(bk, isNow) {
   return '<div class="brow'+(isNow?' now':'')+'" style="border-left:8px solid '+bk.color+';">'
-    +'<div class="bt"><span class="bs">'+fmtTime(bk.start)+'</span><span class="be">until '+fmtTime(bk.end)+'</span></div>'
-    +'<div class="bm"><span class="bi">'+esc(bk.title)+'</span>'+(isNow?'<span class="nb">NOW</span>':'')+'</div>'
-    +'<div class="bsp" style="color:'+bk.color+'">'+esc(bk.space)+'</div>'
-    +'</div>';
+  +'<div class="bt"><span class="bs">'+fmtTime(bk.start)+'</span><span class="be">until '+fmtTime(bk.end)+'</span></div>'
+  +'<div class="bm"><span class="bi">'+esc(bk.title)+'</span>'+(isNow?'<span class="nb">NOW</span>':'')+'</div>'
+  +'<div class="bsp" style="color:'+bk.color+'">'+esc(bk.space)+'</div>'
+  +'</div>';
 }
 
 async function main() {
@@ -91,23 +91,23 @@ async function main() {
   }
   all.sort((a,b) => a.start - b.start);
 
-  const sot = new Date(now); sot.setHours(0,0,0,0);
+const sot = new Date(now); sot.setHours(0,0,0,0);
   const eot = new Date(sot); eot.setDate(eot.getDate()+1);
   const cut = new Date(sot); cut.setDate(cut.getDate()+DAYS_AHEAD);
   const tom = new Date(sot); tom.setDate(tom.getDate()+1);
   const tomKey = fmtDayKey(tom);
 
-  const todayBks  = all.filter(b => b.start >= sot && b.start < eot);
+const todayBks = all.filter(b => b.start >= sot && b.start < eot);
   const futureBks = all.filter(b => b.start >= eot && b.start < cut);
 
-  let todayHtml = '';
+let todayHtml = '';
   if (todayBks.length === 0) {
     todayHtml = '<div class="none">No bookings today</div>';
   } else {
     todayBks.forEach(b => { todayHtml += row(b, b.start <= now && b.end > now); });
   }
 
-  let futureHtml = '';
+let futureHtml = '';
   let lastKey = '', curGroup = null;
   const groups = [];
   futureBks.forEach(b => {
@@ -118,24 +118,27 @@ async function main() {
   groups.forEach(g => {
     const isTom = g.key === tomKey;
     futureHtml += '<div class="dhdr'+(isTom?' tom':'')+'">'
-      +(isTom?'<span class="dpill">TOMORROW</span>':'')
-      +'<span class="dday">'+DAYS[g.date.getDay()]+'</span>'
-      +' <span class="ddate">'+g.date.getDate()+' '+MSHORT[g.date.getMonth()]+'</span>'
-      +'</div>';
+    +(isTom?'<span class="dpill">TOMORROW</span>':'')
+    +'<span class="dday">'+DAYS[g.date.getDay()]+'</span>'
+    +' <span class="ddate">'+g.date.getDate()+' '+MSHORT[g.date.getMonth()]+'</span>'
+    +'</div>';
     g.bks.forEach(b => { futureHtml += row(b, false); });
   });
   if (!futureHtml) futureHtml = '<div class="none">No further bookings in the next '+DAYS_AHEAD+' days</div>';
 
-  const monthLabel = MONTHS[now.getMonth()]+' '+now.getFullYear();
+const monthLabel = MONTHS[now.getMonth()]+' '+now.getFullYear();
   const updatedStr = fmtTime(now);
 
-  const lines = [];
+const lines = [];
   lines.push('<!DOCTYPE html>');
   lines.push('<html><head>');
   lines.push('<meta charset="UTF-8">');
   lines.push('<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">');
   lines.push('<meta name="apple-mobile-web-app-capable" content="yes">');
   lines.push('<meta name="apple-mobile-web-app-status-bar-style" content="black">');
+  lines.push('<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">');
+  lines.push('<meta http-equiv="Pragma" content="no-cache">');
+  lines.push('<meta http-equiv="Expires" content="0">');
   lines.push('<title>Gemco Venue Bookings</title>');
   lines.push('<style>');
   lines.push('html,body{margin:0;padding:0;background:#09090b;color:#f0ece4;font-family:Arial,Helvetica,sans-serif;height:100%;overflow:hidden;}');
@@ -178,20 +181,20 @@ async function main() {
   lines.push('.none{font-size:18px;color:#555;padding:10px 8px;font-style:italic;}');
   lines.push('</style></head><body>');
 
-  lines.push('<div id="hdr">');
+lines.push('<div id="hdr">');
   lines.push('<div id="hl"><div id="vn">Gemco</div><div id="vs">Venue Bookings</div><div id="ml">'+monthLabel+'</div></div>');
   lines.push('<div id="hr"><div id="ck">--:--</div><div id="dl"></div><div id="upd">Updated '+updatedStr+'</div></div>');
   lines.push('<div style="clear:both"></div></div>');
 
-  lines.push('<div id="tp">');
+lines.push('<div id="tp">');
   lines.push('<div class="thdr"><span class="tpill">TODAY</span><span class="tday" id="td"></span><span class="tdate" id="tdt"></span></div>');
   lines.push(todayHtml);
   lines.push('</div>');
 
-  lines.push('<div id="fl"><div id="flt">Coming Up &mdash; Next 2 Weeks</div><div id="flr"><span class="badge">'+futureBks.length+' events</span></div><div style="clear:both"></div></div>');
+lines.push('<div id="fl"><div id="flt">Coming Up &mdash; Next 2 Weeks</div><div id="flr"><span class="badge">'+futureBks.length+' events</span></div><div style="clear:both"></div></div>');
   lines.push('<div id="sa"><div id="sl">'+futureHtml+'</div></div>');
 
-  lines.push('<script>');
+lines.push('<script>');
   lines.push('var D=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];');
   lines.push('var M=["January","February","March","April","May","June","July","August","September","October","November","December"];');
   lines.push('var MS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];');
@@ -204,22 +207,18 @@ async function main() {
   lines.push('sa.style.height=(ph-used)+"px";');
   lines.push('var sp=0,paused=0;');
   lines.push('setInterval(function(){');
-  lines.push('  if(paused>0){paused--;if(paused===0){sp=0;sa.scrollTop=0;}return;}');
-  lines.push('  var mx=sa.scrollHeight-sa.clientHeight;');
-  lines.push('  if(mx<=0)return;');
-  lines.push('  sp+=1.5;');
-  lines.push('  if(sp>=mx){sp=mx;paused=150;}');
-  lines.push('  sa.scrollTop=sp;');
+  lines.push(' if(paused>0){paused--;if(paused===0){sp=0;sa.scrollTop=0;}return;}');
+  lines.push(' var mx=sa.scrollHeight-sa.clientHeight;');
+  lines.push(' if(mx<=0)return;');
+  lines.push(' sp+=1.5;');
+  lines.push(' if(sp>=mx){sp=mx;paused=150;}');
+  lines.push(' sa.scrollTop=sp;');
   lines.push('},30);');
-  lines.push('(function(){');
-  lines.push('  var n=new Date();');
-  lines.push('  var midnight=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,0,0,5);');
-  lines.push('  setTimeout(function(){location.reload();},midnight-n);');
-  lines.push('})();');
+  lines.push('setInterval(function(){location.href=location.pathname+"?_="+Date.now();},5*60*1000);');
   lines.push('<\/script>');
   lines.push('</body></html>');
 
-  fs.writeFileSync('index.html', lines.join('\n'));
+fs.writeFileSync('index.html', lines.join('\n'));
   console.log('Written — AEST offset: UTC+'+offsetHours+' today:'+todayBks.length+' future:'+futureBks.length);
 }
 
